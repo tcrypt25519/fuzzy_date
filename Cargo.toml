@@ -1,0 +1,17 @@
+[package]
+name = "fuzzy_date"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "A tiny Rust crate to represent dates with varying precision"
+
+[lib]
+name = "fuzzy_date"
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
