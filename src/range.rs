@@ -168,7 +168,13 @@ impl FromStr for FuzzyDateRange {
                 RANGE_SEPARATOR, s
             ))),
             1 => {
-                let pos = trimmed.find(RANGE_SEPARATOR).unwrap();
+                // SAFETY: We just verified separator_count == 1, so find() must succeed
+                let pos = trimmed.find(RANGE_SEPARATOR).ok_or_else(|| {
+                    RangeError::InvalidFormat(format!(
+                        "Separator '{}' not found despite count == 1",
+                        RANGE_SEPARATOR
+                    ))
+                })?;
                 let start_str = trimmed[..pos].trim();
                 let end_str = trimmed[pos + 1..].trim();
 

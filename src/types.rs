@@ -138,7 +138,7 @@ impl TryFrom<u8> for Day {
             });
         }
         // SAFETY: We just validated that value is >= MIN_DAY which is 1, so it's non-zero
-        Ok(Self(NonZeroU8::new(value).unwrap()))
+        Ok(Self(unsafe { NonZeroU8::new_unchecked(value) }))
     }
 }
 
