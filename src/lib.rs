@@ -243,13 +243,13 @@ impl FuzzyDate {
     /// Helper to parse u16 with better error messages
     fn parse_u16(s: &str) -> Result<u16, ParseError> {
         s.parse::<u16>()
-            .map_err(|_| ParseError::InvalidFormat(s.to_string()))
+            .map_err(|_| ParseError::InvalidFormat(s.to_owned()))
     }
 
     /// Helper to parse u8 with better error messages
     fn parse_u8(s: &str) -> Result<u8, ParseError> {
         s.parse::<u8>()
-            .map_err(|_| ParseError::InvalidFormat(s.to_string()))
+            .map_err(|_| ParseError::InvalidFormat(s.to_owned()))
     }
 
     /// Validates and creates a Year type
