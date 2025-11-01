@@ -1,41 +1,32 @@
 use crate::{FuzzyDate, ParseError, RANGE_SEPARATOR};
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-use std::fmt;
 use std::str::FromStr;
 
 /// Represents a range between two fuzzy dates (inclusive).
 /// The start date must be less than or equal to the end date.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display)]
+#[display(fmt = "{}/{}", start, end)]
 pub struct FuzzyDateRange {
     start: FuzzyDate,
     end: FuzzyDate,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum RangeError {
     /// Start date is after end date
+    #[display(
+        fmt = "Invalid date range: start ({}) is after end ({})",
+        start, end
+    )]
     InvalidRange { start: FuzzyDate, end: FuzzyDate },
     /// Error parsing date component
+    #[display(fmt = "Parse error: {}", _0)]
     ParseError(ParseError),
     /// Invalid range format
+    #[display(fmt = "Invalid range format: {}", _0)]
     InvalidFormat(String),
-}
-
-impl fmt::Display for RangeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidRange { start, end } => {
-                write!(
-                    f,
-                    "Invalid date range: start ({}) is after end ({})",
-                    start, end
-                )
-            }
-            Self::ParseError(e) => write!(f, "Parse error: {}", e),
-            Self::InvalidFormat(s) => write!(f, "Invalid range format: {}", s),
-        }
-    }
 }
 
 impl std::error::Error for RangeError {}
@@ -144,12 +135,6 @@ impl FuzzyDateRange {
         let start = FuzzyDate::from_columns(start_year, start_month, start_day)?;
         let end = FuzzyDate::from_columns(end_year, end_month, end_day)?;
         Self::new(start, end)
-    }
-}
-
-impl fmt::Display for FuzzyDateRange {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}", self.start, self.end)
     }
 }
 
