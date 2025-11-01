@@ -5,6 +5,9 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 description = "A tiny Rust crate to represent dates with varying precision"
+repository.workspace = true
+keywords = ["date", "datetime", "partial", "fuzzy"]
+categories = ["date-and-time"]
 
 [lib]
 name = "fuzzy_date"
