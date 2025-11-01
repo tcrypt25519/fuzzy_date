@@ -13,7 +13,6 @@ path = "src/lib.rs"
 [dependencies]
 derive_more.workspace = true
 serde.workspace = true
-derive_more.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
