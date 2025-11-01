@@ -137,8 +137,13 @@ impl TryFrom<u8> for Day {
                 year: 0,
             });
         }
-        // SAFETY: We just validated that value is >= MIN_DAY which is 1, so it's non-zero
-        Ok(Self(unsafe { NonZeroU8::new_unchecked(value) }))
+        // Since we validated value >= MIN_DAY (which is 1), value is non-zero
+        let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidDay {
+            month: 0,
+            day: value,
+            year: 0,
+        })?;
+        Ok(Self(non_zero))
     }
 }
 
