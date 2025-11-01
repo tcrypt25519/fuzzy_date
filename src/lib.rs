@@ -367,7 +367,7 @@ impl FuzzyDate {
     }
 
     /// Exclusive upper bound (year, month, day).
-    /// Returns `None` if it would overflow MAX_YEAR limit.
+    /// Returns `None` if it would overflow `MAX_YEAR` limit.
     pub fn upper_bound_exclusive(&self) -> Option<(u16, u8, u8)> {
         match *self {
             FuzzyDate::Day { year, month, day } => next_day(year.get(), month.get(), day.get()),
@@ -385,7 +385,7 @@ impl FuzzyDate {
         }
     }
 
-    /// Rank used for ordering ties on the same lower_bound:
+    /// Rank used for ordering ties on the same `lower_bound`:
     /// less precise comes first: Year < Month < Day.
     #[inline]
     fn precision_rank(&self) -> u8 {

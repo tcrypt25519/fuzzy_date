@@ -96,31 +96,31 @@ impl FuzzyDateRange {
     }
 
     /// Returns the earliest concrete date represented by this range.
-    /// This is the lower_bound of the start date.
+    /// This is the `lower_bound` of the start date.
     pub fn lower_bound(&self) -> (u16, u8, u8) {
         self.start.lower_bound()
     }
 
     /// Returns the latest concrete date represented by this range (inclusive).
-    /// This is the upper_bound_inclusive of the end date.
+    /// This is the `upper_bound_inclusive` of the end date.
     pub fn upper_bound_inclusive(&self) -> (u16, u8, u8) {
         self.end.upper_bound_inclusive()
     }
 
     /// Returns the exclusive upper bound of this range.
-    /// Returns None if it would overflow MAX_YEAR limit.
+    /// Returns None if it would overflow `MAX_YEAR` limit.
     pub fn upper_bound_exclusive(&self) -> Option<(u16, u8, u8)> {
         self.end.upper_bound_exclusive()
     }
 
-    /// Converts to database columns: (start_year, start_month, start_day, end_year, end_month, end_day)
+    /// Converts to database columns: (`start_year`, `start_month`, `start_day`, `end_year`, `end_month`, `end_day`)
     pub fn to_columns(&self) -> (u16, Option<u8>, Option<u8>, u16, Option<u8>, Option<u8>) {
         let (sy, sm, sd) = self.start.to_columns();
         let (ey, em, ed) = self.end.to_columns();
         (sy, sm, sd, ey, em, ed)
     }
 
-    /// Creates from database columns: (start_year, start_month, start_day, end_year, end_month, end_day)
+    /// Creates from database columns: (`start_year`, `start_month`, `start_day`, `end_year`, `end_month`, `end_day`)
     pub fn from_columns(
         start_year: u16,
         start_month: Option<u8>,

@@ -5,14 +5,14 @@ use std::fmt;
 use std::num::NonZeroU16;
 use std::num::NonZeroU8;
 
-/// A year value guaranteed to be in the range 1..=MAX_YEAR (1..=9999)
-/// Uses NonZeroU16 internally, so 0 is not a valid year.
+/// A year value guaranteed to be in the range `1..=MAX_YEAR` (1..=9999)
+/// Uses `NonZeroU16` internally, so 0 is not a valid year.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u16", into = "u16")]
 pub struct Year(NonZeroU16);
 
 impl Year {
-    /// Creates a new Year, validating that it's non-zero and <= MAX_YEAR
+    /// Creates a new Year, validating that it's non-zero and <= `MAX_YEAR`
     pub fn new(value: u16) -> Result<Self, ParseError> {
         let non_zero = NonZeroU16::new(value).ok_or(ParseError::InvalidYear(value))?;
         if value > MAX_YEAR {
@@ -48,14 +48,14 @@ impl fmt::Display for Year {
     }
 }
 
-/// A month value guaranteed to be in the range 1..=MAX_MONTH (1..=12)
-/// Uses NonZeroU8 internally, so 0 is not a valid month.
+/// A month value guaranteed to be in the range `1..=MAX_MONTH` (1..=12)
+/// Uses `NonZeroU8` internally, so 0 is not a valid month.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u8", into = "u8")]
 pub struct Month(NonZeroU8);
 
 impl Month {
-    /// Creates a new Month, validating that it's non-zero and <= MAX_MONTH
+    /// Creates a new Month, validating that it's non-zero and <= `MAX_MONTH`
     pub fn new(value: u8) -> Result<Self, ParseError> {
         let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidMonth(value))?;
         if value > MAX_MONTH {
@@ -92,7 +92,7 @@ impl fmt::Display for Month {
 }
 
 /// A day value guaranteed to be valid for a given year and month
-/// Uses NonZeroU8 internally, so 0 is not a valid day.
+/// Uses `NonZeroU8` internally, so 0 is not a valid day.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u8", into = "u8")]
 pub struct Day(NonZeroU8);
