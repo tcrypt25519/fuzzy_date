@@ -1,5 +1,5 @@
+use crate::prelude::*;
 use crate::{FuzzyDate, ParseError, RANGE_SEPARATOR};
-use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::str::FromStr;
@@ -16,10 +16,7 @@ pub struct FuzzyDateRange {
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum RangeError {
     /// Start date is after end date
-    #[display(
-        fmt = "Invalid date range: start ({}) is after end ({})",
-        start, end
-    )]
+    #[display(fmt = "Invalid date range: start ({}) is after end ({})", start, end)]
     InvalidRange { start: FuzzyDate, end: FuzzyDate },
     /// Error parsing date component
     #[display(fmt = "Parse error: {}", _0)]

@@ -1,4 +1,5 @@
 mod consts;
+mod prelude;
 mod range;
 mod types;
 
@@ -6,7 +7,7 @@ pub use consts::*;
 pub use range::{FuzzyDateRange, RangeError};
 pub use types::{Day, Month, Year};
 
-use derive_more::Display;
+use crate::prelude::*;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::str::FromStr;
