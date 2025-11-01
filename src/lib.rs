@@ -40,9 +40,9 @@ pub enum FuzzyDate {
 pub enum ParseError {
     #[display(fmt = "Invalid date format: {_0}")]
     InvalidFormat(String),
-    #[display(fmt = "Invalid year: {} (must be 1-{})", "_0", MAX_YEAR)]
+    #[display(fmt = "Invalid year: {_0} (must be 1-{MAX_YEAR})")]
     InvalidYear(u16),
-    #[display(fmt = "Invalid month: {} (must be 1-{})", "_0", MAX_MONTH)]
+    #[display(fmt = "Invalid month: {_0} (must be 1-{MAX_MONTH})")]
     InvalidMonth(u8),
     #[display(fmt = "Invalid day {day} for month {year}-{month:02}")]
     InvalidDay { month: u8, day: u8, year: u16 },
@@ -153,8 +153,7 @@ impl FuzzyDate {
                 Ok(Self::Year { year: year_nz })
             }
             (None, Some(d)) => Err(ParseError::InvalidFormat(format!(
-                "Cannot have day {} without month",
-                d
+                "Cannot have day {d} without month"
             ))),
         }
     }
@@ -200,8 +199,7 @@ impl FromStr for FuzzyDate {
 
         if has_hyphen && has_slash {
             return Err(ParseError::InvalidFormat(format!(
-                "Mixed delimiters ({} and {})",
-                DATE_SEPARATOR, MONTH_FIRST_SEPARATOR
+                "Mixed delimiters ({DATE_SEPARATOR} and {MONTH_FIRST_SEPARATOR})"
             )));
         }
 

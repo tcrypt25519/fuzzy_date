@@ -7,7 +7,7 @@ use std::str::FromStr;
 /// Represents a range between two fuzzy dates (inclusive).
 /// The start date must be less than or equal to the end date.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display)]
-#[display(fmt = "{}/{}", start, end)]
+#[display(fmt = "{start}/{end}")]
 pub struct FuzzyDateRange {
     start: FuzzyDate,
     end: FuzzyDate,
@@ -16,13 +16,13 @@ pub struct FuzzyDateRange {
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum RangeError {
     /// Start date is after end date
-    #[display(fmt = "Invalid date range: start ({}) is after end ({})", start, end)]
+    #[display(fmt = "Invalid date range: start ({start}) is after end ({end})")]
     InvalidRange { start: FuzzyDate, end: FuzzyDate },
     /// Error parsing date component
-    #[display(fmt = "Parse error: {}", _0)]
+    #[display(fmt = "Parse error: {_0}")]
     ParseError(ParseError),
     /// Invalid range format
-    #[display(fmt = "Invalid range format: {}", _0)]
+    #[display(fmt = "Invalid range format: {_0}")]
     InvalidFormat(String),
 }
 
@@ -146,15 +146,13 @@ impl FromStr for FuzzyDateRange {
 
         match separator_count {
             0 => Err(RangeError::InvalidFormat(format!(
-                "No range separator found (expected '{}'): {}",
-                RANGE_SEPARATOR, s
+                "No range separator found (expected '{RANGE_SEPARATOR}'): {s}"
             ))),
             1 => {
                 // SAFETY: We just verified separator_count == 1, so find() must succeed
                 let pos = trimmed.find(RANGE_SEPARATOR).ok_or_else(|| {
                     RangeError::InvalidFormat(format!(
-                        "Separator '{}' not found despite count == 1",
-                        RANGE_SEPARATOR
+                        "Separator '{RANGE_SEPARATOR}' not found despite count == 1"
                     ))
                 })?;
                 let start_str = trimmed[..pos].trim();
@@ -166,8 +164,7 @@ impl FromStr for FuzzyDateRange {
                 Self::new(start, end)
             }
             _ => Err(RangeError::InvalidFormat(format!(
-                "Too many '{}' separators: expected 1, found {}",
-                RANGE_SEPARATOR, separator_count
+                "Too many '{RANGE_SEPARATOR}' separators: expected 1, found {separator_count}"
             ))),
         }
     }
