@@ -205,7 +205,7 @@ impl FromStr for FuzzyDate {
 
         if has_hyphen {
             // ISO format: YYYY or YYYY-MM or YYYY-MM-DD
-            let parts: Vec<&str> = trimmed.split(DATE_SEPARATOR).map(|p| p.trim()).collect();
+            let parts: Vec<&str> = trimmed.split(DATE_SEPARATOR).map(str::trim).collect();
             match parts.len() {
                 1 => Self::parse_year_only(parts[0]),
                 2 => Self::parse_iso_month_year(&parts),
@@ -220,7 +220,7 @@ impl FromStr for FuzzyDate {
             // Month-first format: MM/YYYY or MM/DD/YYYY
             let parts: Vec<&str> = trimmed
                 .split(MONTH_FIRST_SEPARATOR)
-                .map(|p| p.trim())
+                .map(str::trim)
                 .collect();
             match parts.len() {
                 2 => Self::parse_month_year(&parts),
