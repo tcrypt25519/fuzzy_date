@@ -6,55 +6,47 @@ pub use consts::*;
 pub use range::{FuzzyDateRange, RangeError};
 pub use types::{Day, Month, Year};
 
+use derive_more::Display;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
-use std::fmt;
 use std::str::FromStr;
 use types::days_in_month;
 
 /// Represents a date with varying levels of precision.
 /// This allows representing dates where only some components are known,
 /// without fabricating missing data.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display)]
 pub enum FuzzyDate {
     /// Full date with day, month, and year
+    #[display(fmt = "{:04}-{:02}-{:02}", "year.get()", "month.get()", "day.get()")]
     Day {
         year: types::Year,
         month: types::Month,
         day: types::Day,
     },
     /// Month and year only
+    #[display(fmt = "{:04}-{:02}", "year.get()", "month.get()")]
     Month {
         year: types::Year,
         month: types::Month,
     },
     /// Year only
+    #[display(fmt = "{:04}", "year.get()")]
     Year { year: types::Year },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum ParseError {
+    #[display(fmt = "Invalid date format: {_0}")]
     InvalidFormat(String),
+    #[display(fmt = "Invalid year: {} (must be 1-{})", "_0", MAX_YEAR)]
     InvalidYear(u16),
+    #[display(fmt = "Invalid month: {} (must be 1-{})", "_0", MAX_MONTH)]
     InvalidMonth(u8),
+    #[display(fmt = "Invalid day {day} for month {year}-{month:02}")]
     InvalidDay { month: u8, day: u8, year: u16 },
+    #[display(fmt = "Empty date string")]
     EmptyInput,
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidFormat(s) => write!(f, "Invalid date format: {}", s),
-            Self::InvalidYear(y) => {
-                write!(f, "Invalid year: {} (must be 1-{})", y, MAX_YEAR)
-            }
-            Self::InvalidMonth(m) => write!(f, "Invalid month: {} (must be 1-{})", m, MAX_MONTH),
-            Self::InvalidDay { month, day, year } => {
-                write!(f, "Invalid day {} for month {}/{}", day, month, year)
-            }
-            Self::EmptyInput => write!(f, "Empty date string"),
-        }
-    }
 }
 
 impl std::error::Error for ParseError {}
@@ -347,18 +339,6 @@ impl FuzzyDate {
         let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
 
         Ok(Self::Day { year, month, day })
-    }
-}
-
-impl fmt::Display for FuzzyDate {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Day { year, month, day } => {
-                write!(f, "{:04}-{:02}-{:02}", year.get(), month.get(), day.get())
-            }
-            Self::Month { year, month } => write!(f, "{:04}-{:02}", year.get(), month.get()),
-            Self::Year { year } => write!(f, "{:04}", year.get()),
-        }
     }
 }
 
