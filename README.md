@@ -6,6 +6,7 @@ and US month-first (`MM/YYYY`, `MM/DD/YYYY`) formats, formats in ISO, and expose
 helpers for lower/upper bounds.
 
 ## Highlights
+
 - Enum representation: `Year`, `MonthYear`, `Full`
 - ISO `Display`: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`
 - Parsing: ISO and common US month-first inputs; trims inner whitespace
@@ -14,5 +15,6 @@ helpers for lower/upper bounds.
 - `serde` support with `snake_case` tag; legacy alias `monthyear`
 
 ## Quick start
+
 - `cargo test` to run the included tests.
 - Use `PartialDate::from_str("1991-08")?` or `"08/1991"`, etc.
