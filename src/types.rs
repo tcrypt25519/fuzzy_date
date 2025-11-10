@@ -409,60 +409,214 @@ mod tests {
     }
 
     #[test]
-    fn test_is_leap_year_divisible_by_4() {
-        assert!(is_leap_year(2020));
-        assert!(is_leap_year(2024));
-        assert!(!is_leap_year(2021));
-        assert!(!is_leap_year(2023));
+    fn test_is_leap_year_cases() {
+        struct TestCase {
+            year: u16,
+            is_leap: bool,
+            description: &'static str,
+        }
+
+        let cases = [
+            // Divisible by 4
+            TestCase {
+                year: 2020,
+                is_leap: true,
+                description: "divisible by 4",
+            },
+            TestCase {
+                year: 2024,
+                is_leap: true,
+                description: "divisible by 4",
+            },
+            TestCase {
+                year: 2021,
+                is_leap: false,
+                description: "not divisible by 4",
+            },
+            TestCase {
+                year: 2023,
+                is_leap: false,
+                description: "not divisible by 4",
+            },
+            // Century years not divisible by 400
+            TestCase {
+                year: 1900,
+                is_leap: false,
+                description: "century not divisible by 400",
+            },
+            TestCase {
+                year: 2100,
+                is_leap: false,
+                description: "century not divisible by 400",
+            },
+            TestCase {
+                year: 2200,
+                is_leap: false,
+                description: "century not divisible by 400",
+            },
+            TestCase {
+                year: 2300,
+                is_leap: false,
+                description: "century not divisible by 400",
+            },
+            // Divisible by 400
+            TestCase {
+                year: 2000,
+                is_leap: true,
+                description: "divisible by 400",
+            },
+            TestCase {
+                year: 2400,
+                is_leap: true,
+                description: "divisible by 400",
+            },
+        ];
+
+        for case in &cases {
+            assert_eq!(
+                is_leap_year(case.year),
+                case.is_leap,
+                "Year {} ({}): expected {}",
+                case.year,
+                case.description,
+                if case.is_leap {
+                    "leap year"
+                } else {
+                    "not leap year"
+                }
+            );
+        }
     }
 
     #[test]
-    fn test_is_leap_year_century_not_divisible_by_400() {
-        assert!(!is_leap_year(1900));
-        assert!(!is_leap_year(2100));
-        assert!(!is_leap_year(2200));
-        assert!(!is_leap_year(2300));
-    }
+    fn test_days_in_month_cases() {
+        struct TestCase {
+            year: u16,
+            month: u8,
+            expected_days: u8,
+            description: &'static str,
+        }
 
-    #[test]
-    fn test_is_leap_year_divisible_by_400() {
-        assert!(is_leap_year(2000));
-        assert!(is_leap_year(2400));
-    }
+        let cases = [
+            // 31-day months
+            TestCase {
+                year: 2024,
+                month: 1,
+                expected_days: 31,
+                description: "January (31 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 3,
+                expected_days: 31,
+                description: "March (31 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 5,
+                expected_days: 31,
+                description: "May (31 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 7,
+                expected_days: 31,
+                description: "July (31 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 8,
+                expected_days: 31,
+                description: "August (31 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 10,
+                expected_days: 31,
+                description: "October (31 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 12,
+                expected_days: 31,
+                description: "December (31 days)",
+            },
+            // 30-day months
+            TestCase {
+                year: 2024,
+                month: 4,
+                expected_days: 30,
+                description: "April (30 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 6,
+                expected_days: 30,
+                description: "June (30 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 9,
+                expected_days: 30,
+                description: "September (30 days)",
+            },
+            TestCase {
+                year: 2024,
+                month: 11,
+                expected_days: 30,
+                description: "November (30 days)",
+            },
+            // February non-leap
+            TestCase {
+                year: 2023,
+                month: 2,
+                expected_days: 28,
+                description: "February non-leap",
+            },
+            TestCase {
+                year: 2021,
+                month: 2,
+                expected_days: 28,
+                description: "February non-leap",
+            },
+            TestCase {
+                year: 1900,
+                month: 2,
+                expected_days: 28,
+                description: "February non-leap (century)",
+            },
+            // February leap
+            TestCase {
+                year: 2024,
+                month: 2,
+                expected_days: 29,
+                description: "February leap",
+            },
+            TestCase {
+                year: 2020,
+                month: 2,
+                expected_days: 29,
+                description: "February leap",
+            },
+            TestCase {
+                year: 2000,
+                month: 2,
+                expected_days: 29,
+                description: "February leap (400)",
+            },
+        ];
 
-    #[test]
-    fn test_days_in_month_31_days() {
-        // January, March, May, July, August, October, December
-        assert_eq!(days_in_month(2024, 1), 31);
-        assert_eq!(days_in_month(2024, 3), 31);
-        assert_eq!(days_in_month(2024, 5), 31);
-        assert_eq!(days_in_month(2024, 7), 31);
-        assert_eq!(days_in_month(2024, 8), 31);
-        assert_eq!(days_in_month(2024, 10), 31);
-        assert_eq!(days_in_month(2024, 12), 31);
-    }
-
-    #[test]
-    fn test_days_in_month_30_days() {
-        // April, June, September, November
-        assert_eq!(days_in_month(2024, 4), 30);
-        assert_eq!(days_in_month(2024, 6), 30);
-        assert_eq!(days_in_month(2024, 9), 30);
-        assert_eq!(days_in_month(2024, 11), 30);
-    }
-
-    #[test]
-    fn test_days_in_month_february_non_leap() {
-        assert_eq!(days_in_month(2023, 2), 28);
-        assert_eq!(days_in_month(2021, 2), 28);
-        assert_eq!(days_in_month(1900, 2), 28); // Century year not divisible by 400
-    }
-
-    #[test]
-    fn test_days_in_month_february_leap() {
-        assert_eq!(days_in_month(2024, 2), 29);
-        assert_eq!(days_in_month(2020, 2), 29);
-        assert_eq!(days_in_month(2000, 2), 29); // Divisible by 400
+        for case in &cases {
+            assert_eq!(
+                days_in_month(case.year, case.month),
+                case.expected_days,
+                "{}: expected {} days in month {}/{}",
+                case.description,
+                case.expected_days,
+                case.year,
+                case.month
+            );
+        }
     }
 
     #[test]

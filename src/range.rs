@@ -211,27 +211,46 @@ mod tests {
     use crate::{Day, Month, Year};
 
     #[test]
-    fn test_new_valid_range() {
-        let start = FuzzyDate::new_year(Year::new(1990).unwrap()).unwrap();
-        let end = FuzzyDate::new_year(Year::new(2000).unwrap()).unwrap();
-        let range = FuzzyDateRange::new(start, end);
-        assert!(range.is_ok());
-    }
+    fn test_new_range_cases() {
+        struct TestCase {
+            start_year: u16,
+            end_year: u16,
+            should_succeed: bool,
+            description: &'static str,
+        }
 
-    #[test]
-    fn test_new_invalid_range() {
-        let start = FuzzyDate::new_year(Year::new(2000).unwrap()).unwrap();
-        let end = FuzzyDate::new_year(Year::new(1990).unwrap()).unwrap();
-        let range = FuzzyDateRange::new(start, end);
-        assert!(range.is_err());
-    }
+        let cases = [
+            TestCase {
+                start_year: 1990,
+                end_year: 2000,
+                should_succeed: true,
+                description: "valid range (start < end)",
+            },
+            TestCase {
+                start_year: 2000,
+                end_year: 1990,
+                should_succeed: false,
+                description: "invalid range (start > end)",
+            },
+            TestCase {
+                start_year: 2000,
+                end_year: 2000,
+                should_succeed: true,
+                description: "equal dates (start == end)",
+            },
+        ];
 
-    #[test]
-    fn test_new_equal_dates() {
-        let start = FuzzyDate::new_year(Year::new(2000).unwrap()).unwrap();
-        let end = FuzzyDate::new_year(Year::new(2000).unwrap()).unwrap();
-        let range = FuzzyDateRange::new(start, end);
-        assert!(range.is_ok());
+        for case in &cases {
+            let start = FuzzyDate::new_year(Year::new(case.start_year).unwrap()).unwrap();
+            let end = FuzzyDate::new_year(Year::new(case.end_year).unwrap()).unwrap();
+            let range = FuzzyDateRange::new(start, end);
+
+            if case.should_succeed {
+                assert!(range.is_ok(), "Expected success for: {}", case.description);
+            } else {
+                assert!(range.is_err(), "Expected failure for: {}", case.description);
+            }
+        }
     }
 
     #[test]
