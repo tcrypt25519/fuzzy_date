@@ -41,21 +41,29 @@ pub enum FuzzyDate {
     Year { year: types::Year },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+/// Error type for parsing fuzzy dates from strings.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ParseError {
-    #[display(fmt = "Invalid date format: {_0}")]
+    /// The input string format is invalid.
+    #[error("Invalid date format: {0}")]
     InvalidFormat(String),
-    #[display(fmt = "Invalid year: {_0} (must be 1-{MAX_YEAR})")]
+
+    /// The year value is out of valid range (1..=9999).
+    #[error("Invalid year: {0} (must be 1-{MAX_YEAR})")]
     InvalidYear(u16),
-    #[display(fmt = "Invalid month: {_0} (must be 1-{MAX_MONTH})")]
+
+    /// The month value is out of valid range (1..=12).
+    #[error("Invalid month: {0} (must be 1-{MAX_MONTH})")]
     InvalidMonth(u8),
-    #[display(fmt = "Invalid day {day} for month {year}-{month:02}")]
+
+    /// The day value is invalid for the given month and year.
+    #[error("Invalid day {day} for month {year}-{month:02}")]
     InvalidDay { month: u8, day: u8, year: u16 },
-    #[display(fmt = "Empty date string")]
+
+    /// The input string is empty.
+    #[error("Empty date string")]
     EmptyInput,
 }
-
-impl std::error::Error for ParseError {}
 
 impl FuzzyDate {
     /// Creates a new full date (types are already validated)

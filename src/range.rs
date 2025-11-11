@@ -13,25 +13,20 @@ pub struct FuzzyDateRange {
     end: FuzzyDate,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+/// Error type for date range operations.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum RangeError {
-    /// Start date is after end date
-    #[display(fmt = "Invalid date range: start ({start}) is after end ({end})")]
+    /// Start date is after end date.
+    #[error("Invalid date range: start ({start}) is after end ({end})")]
     InvalidRange { start: FuzzyDate, end: FuzzyDate },
-    /// Error parsing date component
-    #[display(fmt = "Parse error: {_0}")]
-    ParseError(ParseError),
-    /// Invalid range format
-    #[display(fmt = "Invalid range format: {_0}")]
+
+    /// Error parsing date component.
+    #[error(transparent)]
+    ParseError(#[from] ParseError),
+
+    /// Invalid range format.
+    #[error("Invalid range format: {0}")]
     InvalidFormat(String),
-}
-
-impl std::error::Error for RangeError {}
-
-impl From<ParseError> for RangeError {
-    fn from(err: ParseError) -> Self {
-        RangeError::ParseError(err)
-    }
 }
 
 impl FuzzyDateRange {
