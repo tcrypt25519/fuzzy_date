@@ -32,6 +32,9 @@ pub enum RangeError {
 impl FuzzyDateRange {
     /// Creates a new date range with validation.
     /// Returns an error if start > end.
+    ///
+    /// # Errors
+    /// Returns `RangeError::InvalidRange` if start > end.
     pub fn new(start: FuzzyDate, end: FuzzyDate) -> Result<Self, RangeError> {
         if start > end {
             return Err(RangeError::InvalidRange { start, end });
@@ -40,17 +43,17 @@ impl FuzzyDateRange {
     }
 
     /// Returns the start date of the range
-    pub fn start(&self) -> FuzzyDate {
+    pub const fn start(&self) -> FuzzyDate {
         self.start
     }
 
     /// Returns the end date of the range
-    pub fn end(&self) -> FuzzyDate {
+    pub const fn end(&self) -> FuzzyDate {
         self.end
     }
 
     /// Returns both start and end dates as a tuple
-    pub fn dates(&self) -> (FuzzyDate, FuzzyDate) {
+    pub const fn dates(&self) -> (FuzzyDate, FuzzyDate) {
         (self.start, self.end)
     }
 
@@ -68,7 +71,7 @@ impl FuzzyDateRange {
 
     /// Checks if this range overlaps with another range
     /// Uses concrete bounds comparison to handle mixed-precision ranges correctly.
-    pub fn overlaps(&self, other: &FuzzyDateRange) -> bool {
+    pub fn overlaps(&self, other: &Self) -> bool {
         let self_lower = self.start.lower_bound();
         let self_upper = self.end.upper_bound_inclusive();
         let other_lower = other.start.lower_bound();
@@ -80,7 +83,7 @@ impl FuzzyDateRange {
 
     /// Checks if this range is completely contained within another range
     /// Uses concrete bounds comparison to handle mixed-precision ranges correctly.
-    pub fn is_within(&self, other: &FuzzyDateRange) -> bool {
+    pub fn is_within(&self, other: &Self) -> bool {
         let self_lower = self.start.lower_bound();
         let self_upper = self.end.upper_bound_inclusive();
         let other_lower = other.start.lower_bound();
@@ -92,13 +95,13 @@ impl FuzzyDateRange {
 
     /// Returns the earliest concrete date represented by this range.
     /// This is the `lower_bound` of the start date.
-    pub fn lower_bound(&self) -> (u16, u8, u8) {
+    pub const fn lower_bound(&self) -> (u16, u8, u8) {
         self.start.lower_bound()
     }
 
     /// Returns the latest concrete date represented by this range (inclusive).
     /// This is the `upper_bound_inclusive` of the end date.
-    pub fn upper_bound_inclusive(&self) -> (u16, u8, u8) {
+    pub const fn upper_bound_inclusive(&self) -> (u16, u8, u8) {
         self.end.upper_bound_inclusive()
     }
 
@@ -109,13 +112,16 @@ impl FuzzyDateRange {
     }
 
     /// Converts to database columns: (`start_year`, `start_month`, `start_day`, `end_year`, `end_month`, `end_day`)
-    pub fn to_columns(&self) -> (u16, Option<u8>, Option<u8>, u16, Option<u8>, Option<u8>) {
+    pub const fn to_columns(&self) -> (u16, Option<u8>, Option<u8>, u16, Option<u8>, Option<u8>) {
         let (sy, sm, sd) = self.start.to_columns();
         let (ey, em, ed) = self.end.to_columns();
         (sy, sm, sd, ey, em, ed)
     }
 
     /// Creates from database columns: (`start_year`, `start_month`, `start_day`, `end_year`, `end_month`, `end_day`)
+    ///
+    /// # Errors
+    /// Returns `RangeError` if the dates are invalid or start > end.
     pub fn from_columns(
         start_year: u16,
         start_month: Option<u8>,

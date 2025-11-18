@@ -67,7 +67,10 @@ pub enum ParseError {
 
 impl FuzzyDate {
     /// Creates a new full date (types are already validated)
-    pub fn new_day(
+    ///
+    /// # Errors
+    /// This function currently never returns an error, but the Result type is kept for API consistency.
+    pub const fn new_day(
         year: types::Year,
         month: types::Month,
         day: types::Day,
@@ -76,17 +79,23 @@ impl FuzzyDate {
     }
 
     /// Creates a new month-year date (types are already validated)
-    pub fn new_month(year: types::Year, month: types::Month) -> Result<Self, ParseError> {
+    ///
+    /// # Errors
+    /// This function currently never returns an error, but the Result type is kept for API consistency.
+    pub const fn new_month(year: types::Year, month: types::Month) -> Result<Self, ParseError> {
         Ok(Self::Month { year, month })
     }
 
     /// Creates a new year-only date (type is already validated)
-    pub fn new_year(year: types::Year) -> Result<Self, ParseError> {
+    ///
+    /// # Errors
+    /// This function currently never returns an error, but the Result type is kept for API consistency.
+    pub const fn new_year(year: types::Year) -> Result<Self, ParseError> {
         Ok(Self::Year { year })
     }
 
     /// Returns the day component if present (as u8 for convenience)
-    pub fn day(&self) -> Option<u8> {
+    pub const fn day(&self) -> Option<u8> {
         match self {
             Self::Day { day, .. } => Some(day.get()),
             Self::Month { .. } | Self::Year { .. } => None,
@@ -94,7 +103,7 @@ impl FuzzyDate {
     }
 
     /// Returns the month component if present (as u8 for convenience)
-    pub fn month(&self) -> Option<u8> {
+    pub const fn month(&self) -> Option<u8> {
         match self {
             Self::Day { month, .. } | Self::Month { month, .. } => Some(month.get()),
             Self::Year { .. } => None,
@@ -102,14 +111,14 @@ impl FuzzyDate {
     }
 
     /// Returns the year component (always present)
-    pub fn year(&self) -> u16 {
+    pub const fn year(&self) -> u16 {
         match self {
             Self::Day { year, .. } | Self::Month { year, .. } | Self::Year { year } => year.get(),
         }
     }
 
     /// Returns the Day type if present
-    pub fn day_typed(&self) -> Option<types::Day> {
+    pub const fn day_typed(&self) -> Option<types::Day> {
         match self {
             Self::Day { day, .. } => Some(*day),
             Self::Month { .. } | Self::Year { .. } => None,
@@ -117,7 +126,7 @@ impl FuzzyDate {
     }
 
     /// Returns the Month type if present
-    pub fn month_typed(&self) -> Option<types::Month> {
+    pub const fn month_typed(&self) -> Option<types::Month> {
         match self {
             Self::Day { month, .. } | Self::Month { month, .. } => Some(*month),
             Self::Year { .. } => None,
@@ -125,14 +134,14 @@ impl FuzzyDate {
     }
 
     /// Returns the Year type (always present)
-    pub fn year_typed(&self) -> types::Year {
+    pub const fn year_typed(&self) -> types::Year {
         match self {
             Self::Day { year, .. } | Self::Month { year, .. } | Self::Year { year } => *year,
         }
     }
 
     /// Converts to database columns: (year, month, day)
-    pub fn to_columns(&self) -> (u16, Option<u8>, Option<u8>) {
+    pub const fn to_columns(&self) -> (u16, Option<u8>, Option<u8>) {
         match *self {
             Self::Day { year, month, day } => (year.get(), Some(month.get()), Some(day.get())),
             Self::Month { year, month } => (year.get(), Some(month.get()), None),
@@ -141,6 +150,9 @@ impl FuzzyDate {
     }
 
     /// Creates from database columns: (year, month, day)
+    ///
+    /// # Errors
+    /// Returns `ParseError` if the year, month, or day values are invalid.
     pub fn from_columns(year: u16, month: Option<u8>, day: Option<u8>) -> Result<Self, ParseError> {
         match (month, day) {
             (Some(m), Some(d)) => {
@@ -356,24 +368,24 @@ impl FuzzyDate {
 
 impl FuzzyDate {
     /// Earliest concrete (year, month, day) represented by this value.
-    pub fn lower_bound(&self) -> (u16, u8, u8) {
+    pub const fn lower_bound(&self) -> (u16, u8, u8) {
         match *self {
-            FuzzyDate::Day { year, month, day } => (year.get(), month.get(), day.get()),
-            FuzzyDate::Month { year, month } => (year.get(), month.get(), MIN_DAY),
-            FuzzyDate::Year { year } => (year.get(), JANUARY, MIN_DAY),
+            Self::Day { year, month, day } => (year.get(), month.get(), day.get()),
+            Self::Month { year, month } => (year.get(), month.get(), MIN_DAY),
+            Self::Year { year } => (year.get(), JANUARY, MIN_DAY),
         }
     }
 
     /// Latest concrete (year, month, day) represented by this value (inclusive).
-    pub fn upper_bound_inclusive(&self) -> (u16, u8, u8) {
+    pub const fn upper_bound_inclusive(&self) -> (u16, u8, u8) {
         match *self {
-            FuzzyDate::Day { year, month, day } => (year.get(), month.get(), day.get()),
-            FuzzyDate::Month { year, month } => (
+            Self::Day { year, month, day } => (year.get(), month.get(), day.get()),
+            Self::Month { year, month } => (
                 year.get(),
                 month.get(),
                 days_in_month(year.get(), month.get()),
             ),
-            FuzzyDate::Year { year } => (year.get(), DECEMBER, DAYS_IN_MONTH[DECEMBER as usize]),
+            Self::Year { year } => (year.get(), DECEMBER, DAYS_IN_MONTH[DECEMBER as usize]),
         }
     }
 
@@ -381,11 +393,11 @@ impl FuzzyDate {
     /// Returns `None` if it would overflow `MAX_YEAR` limit.
     pub fn upper_bound_exclusive(&self) -> Option<(u16, u8, u8)> {
         match *self {
-            FuzzyDate::Day { year, month, day } => next_day(year.get(), month.get(), day.get()),
-            FuzzyDate::Month { year, month } => {
+            Self::Day { year, month, day } => next_day(year.get(), month.get(), day.get()),
+            Self::Month { year, month } => {
                 next_month(year.get(), month.get()).map(|(ny, nm)| (ny, nm, MIN_DAY))
             }
-            FuzzyDate::Year { year } => {
+            Self::Year { year } => {
                 let y = year.get();
                 if y >= MAX_YEAR {
                     None
@@ -399,11 +411,11 @@ impl FuzzyDate {
     /// Rank used for ordering ties on the same `lower_bound`:
     /// less precise comes first: Year < Month < Day.
     #[inline]
-    fn precision_rank(&self) -> u8 {
-        match *self {
-            FuzzyDate::Year { .. } => 0,
-            FuzzyDate::Month { .. } => 1,
-            FuzzyDate::Day { .. } => 2,
+    const fn precision_rank(self) -> u8 {
+        match self {
+            Self::Year { .. } => 0,
+            Self::Month { .. } => 1,
+            Self::Day { .. } => 2,
         }
     }
 }

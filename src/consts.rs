@@ -36,11 +36,11 @@ pub const DAYS_IN_MONTH: [u8; 13] = [
 ];
 
 /// Leap year occurs every 4 years
-pub(crate) const LEAP_YEAR_CYCLE: u16 = 4;
+pub const LEAP_YEAR_CYCLE: u16 = 4;
 /// Century years are not leap years unless...
-pub(crate) const CENTURY_CYCLE: u16 = 100;
+pub const CENTURY_CYCLE: u16 = 100;
 /// ...they are divisible by 400 (Gregorian calendar correction)
-pub(crate) const GREGORIAN_CYCLE: u16 = 400;
+pub const GREGORIAN_CYCLE: u16 = 400;
 
 /// Date component separator (ISO 8601 format)
 pub const DATE_SEPARATOR: char = '-';

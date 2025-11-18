@@ -1,4 +1,7 @@
-use crate::consts::*;
+use crate::consts::{
+    CENTURY_CYCLE, DAYS_IN_MONTH, FEBRUARY, FEBRUARY_DAYS_LEAP, GREGORIAN_CYCLE, LEAP_YEAR_CYCLE,
+    MAX_MONTH, MAX_YEAR, MIN_DAY,
+};
 use crate::ParseError;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -13,6 +16,9 @@ pub struct Year(NonZeroU16);
 
 impl Year {
     /// Creates a new Year, validating that it's non-zero and <= `MAX_YEAR`
+    ///
+    /// # Errors
+    /// Returns `ParseError::InvalidYear` if the value is 0 or > `MAX_YEAR`.
     pub fn new(value: u16) -> Result<Self, ParseError> {
         let non_zero = NonZeroU16::new(value).ok_or(ParseError::InvalidYear(value))?;
         if value > MAX_YEAR {
@@ -23,7 +29,7 @@ impl Year {
 
     /// Returns the year value as u16
     #[inline]
-    pub fn get(self) -> u16 {
+    pub const fn get(self) -> u16 {
         self.0.get()
     }
 }
@@ -56,6 +62,9 @@ pub struct Month(NonZeroU8);
 
 impl Month {
     /// Creates a new Month, validating that it's non-zero and <= `MAX_MONTH`
+    ///
+    /// # Errors
+    /// Returns `ParseError::InvalidMonth` if the value is 0 or > `MAX_MONTH`.
     pub fn new(value: u8) -> Result<Self, ParseError> {
         let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidMonth(value))?;
         if value > MAX_MONTH {
@@ -66,7 +75,7 @@ impl Month {
 
     /// Returns the month value as u8
     #[inline]
-    pub fn get(self) -> u8 {
+    pub const fn get(self) -> u8 {
         self.0.get()
     }
 }
@@ -99,6 +108,9 @@ pub struct Day(NonZeroU8);
 
 impl Day {
     /// Creates a new Day, validating that it's non-zero and valid for the given year and month
+    ///
+    /// # Errors
+    /// Returns `ParseError::InvalidDay` if the value is 0 or invalid for the given year and month.
     pub fn new(value: u8, year: u16, month: u8) -> Result<Self, ParseError> {
         let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidDay {
             month,
@@ -120,7 +132,7 @@ impl Day {
 
     /// Returns the day value as u8
     #[inline]
-    pub fn get(self) -> u8 {
+    pub const fn get(self) -> u8 {
         self.0.get()
     }
 }
@@ -161,11 +173,11 @@ impl fmt::Display for Day {
 
 // Helper functions
 
-pub(crate) fn is_leap_year(year: u16) -> bool {
+pub const fn is_leap_year(year: u16) -> bool {
     (year % LEAP_YEAR_CYCLE == 0 && year % CENTURY_CYCLE != 0) || (year % GREGORIAN_CYCLE == 0)
 }
 
-pub(crate) fn days_in_month(year: u16, month: u8) -> u8 {
+pub const fn days_in_month(year: u16, month: u8) -> u8 {
     debug_assert!(month != 0 && month <= MAX_MONTH);
 
     if month == FEBRUARY && is_leap_year(year) {
@@ -489,134 +501,43 @@ mod tests {
     }
 
     #[test]
-    fn test_days_in_month_cases() {
-        struct TestCase {
-            year: u16,
-            month: u8,
-            expected_days: u8,
-            description: &'static str,
-        }
-
-        let cases = [
-            // 31-day months
-            TestCase {
-                year: 2024,
-                month: 1,
-                expected_days: 31,
-                description: "January (31 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 3,
-                expected_days: 31,
-                description: "March (31 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 5,
-                expected_days: 31,
-                description: "May (31 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 7,
-                expected_days: 31,
-                description: "July (31 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 8,
-                expected_days: 31,
-                description: "August (31 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 10,
-                expected_days: 31,
-                description: "October (31 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 12,
-                expected_days: 31,
-                description: "December (31 days)",
-            },
-            // 30-day months
-            TestCase {
-                year: 2024,
-                month: 4,
-                expected_days: 30,
-                description: "April (30 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 6,
-                expected_days: 30,
-                description: "June (30 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 9,
-                expected_days: 30,
-                description: "September (30 days)",
-            },
-            TestCase {
-                year: 2024,
-                month: 11,
-                expected_days: 30,
-                description: "November (30 days)",
-            },
-            // February non-leap
-            TestCase {
-                year: 2023,
-                month: 2,
-                expected_days: 28,
-                description: "February non-leap",
-            },
-            TestCase {
-                year: 2021,
-                month: 2,
-                expected_days: 28,
-                description: "February non-leap",
-            },
-            TestCase {
-                year: 1900,
-                month: 2,
-                expected_days: 28,
-                description: "February non-leap (century)",
-            },
-            // February leap
-            TestCase {
-                year: 2024,
-                month: 2,
-                expected_days: 29,
-                description: "February leap",
-            },
-            TestCase {
-                year: 2020,
-                month: 2,
-                expected_days: 29,
-                description: "February leap",
-            },
-            TestCase {
-                year: 2000,
-                month: 2,
-                expected_days: 29,
-                description: "February leap (400)",
-            },
-        ];
-
-        for case in &cases {
+    fn test_days_in_month_31_day_months() {
+        for month in [1, 3, 5, 7, 8, 10, 12] {
             assert_eq!(
-                days_in_month(case.year, case.month),
-                case.expected_days,
-                "{}: expected {} days in month {}/{}",
-                case.description,
-                case.expected_days,
-                case.year,
-                case.month
+                days_in_month(2024, month),
+                31,
+                "Month {month} should have 31 days"
             );
         }
+    }
+
+    #[test]
+    fn test_days_in_month_30_day_months() {
+        for month in [4, 6, 9, 11] {
+            assert_eq!(
+                days_in_month(2024, month),
+                30,
+                "Month {month} should have 30 days"
+            );
+        }
+    }
+
+    #[test]
+    fn test_days_in_month_february_non_leap() {
+        assert_eq!(days_in_month(2023, 2), 28);
+        assert_eq!(days_in_month(2021, 2), 28);
+        assert_eq!(
+            days_in_month(1900, 2),
+            28,
+            "Century year not divisible by 400"
+        );
+    }
+
+    #[test]
+    fn test_days_in_month_february_leap() {
+        assert_eq!(days_in_month(2024, 2), 29);
+        assert_eq!(days_in_month(2020, 2), 29);
+        assert_eq!(days_in_month(2000, 2), 29, "Century year divisible by 400");
     }
 
     #[test]

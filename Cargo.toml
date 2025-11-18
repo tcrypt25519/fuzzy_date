@@ -13,6 +13,9 @@ categories = ["date-and-time"]
 name = "fuzzy_date"
 path = "src/lib.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
 derive_more.workspace = true
 serde.workspace = true
