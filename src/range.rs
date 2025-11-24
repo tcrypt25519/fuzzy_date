@@ -1,8 +1,8 @@
-use crate::prelude::*;
-use crate::{FuzzyDate, ParseError, RANGE_SEPARATOR};
+use std::{cmp::Ordering, str::FromStr};
+
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
-use std::str::FromStr;
+
+use crate::{prelude::*, FuzzyDate, ParseError, RANGE_SEPARATOR};
 
 /// Represents a range between two fuzzy dates (inclusive).
 /// The start date must be less than or equal to the end date.
@@ -10,7 +10,7 @@ use std::str::FromStr;
 #[display(fmt = "{start}/{end}")]
 pub struct FuzzyDateRange {
     start: FuzzyDate,
-    end: FuzzyDate,
+    end:   FuzzyDate,
 }
 
 /// Error type for date range operations.
@@ -152,9 +152,7 @@ impl FromStr for FuzzyDateRange {
             1 => {
                 // SAFETY: We just verified separator_count == 1, so find() must succeed
                 let pos = trimmed.find(RANGE_SEPARATOR).ok_or_else(|| {
-                    RangeError::InvalidFormat(format!(
-                        "Separator '{RANGE_SEPARATOR}' not found despite count == 1"
-                    ))
+                    RangeError::InvalidFormat(format!("Separator '{RANGE_SEPARATOR}' not found despite count == 1"))
                 })?;
                 let start_str = trimmed[..pos].trim();
                 let end_str = trimmed[pos + 1..].trim();
@@ -163,7 +161,7 @@ impl FromStr for FuzzyDateRange {
                 let end = end_str.parse::<FuzzyDate>()?;
 
                 Self::new(start, end)
-            }
+            },
             _ => Err(RangeError::InvalidFormat(format!(
                 "Too many '{RANGE_SEPARATOR}' separators: expected 1, found {separator_count}"
             ))),
@@ -214,30 +212,30 @@ mod tests {
     #[test]
     fn test_new_range_cases() {
         struct TestCase {
-            start_year: u16,
-            end_year: u16,
+            start_year:     u16,
+            end_year:       u16,
             should_succeed: bool,
-            description: &'static str,
+            description:    &'static str,
         }
 
         let cases = [
             TestCase {
-                start_year: 1990,
-                end_year: 2000,
+                start_year:     1990,
+                end_year:       2000,
                 should_succeed: true,
-                description: "valid range (start < end)",
+                description:    "valid range (start < end)",
             },
             TestCase {
-                start_year: 2000,
-                end_year: 1990,
+                start_year:     2000,
+                end_year:       1990,
                 should_succeed: false,
-                description: "invalid range (start > end)",
+                description:    "invalid range (start > end)",
             },
             TestCase {
-                start_year: 2000,
-                end_year: 2000,
+                start_year:     2000,
+                end_year:       2000,
                 should_succeed: true,
-                description: "equal dates (start == end)",
+                description:    "equal dates (start == end)",
             },
         ];
 
@@ -321,12 +319,9 @@ mod tests {
 
     #[test]
     fn test_bounds() {
-        let start = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(15, 1990, 6).unwrap(),
-        )
-        .unwrap();
+        let start =
+            FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(15, 1990, 6).unwrap())
+                .unwrap();
         let end = FuzzyDate::new_day(
             Year::new(2000).unwrap(),
             Month::new(12).unwrap(),
@@ -432,12 +427,9 @@ mod tests {
 
     #[test]
     fn test_to_columns_and_from_columns() {
-        let start = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(15, 1990, 6).unwrap(),
-        )
-        .unwrap();
+        let start =
+            FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(15, 1990, 6).unwrap())
+                .unwrap();
         let end = FuzzyDate::new_day(
             Year::new(2000).unwrap(),
             Month::new(12).unwrap(),
@@ -539,12 +531,9 @@ mod tests {
 
     #[test]
     fn test_serde_full_precision() {
-        let start = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(15, 1990, 6).unwrap(),
-        )
-        .unwrap();
+        let start =
+            FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(15, 1990, 6).unwrap())
+                .unwrap();
         let end = FuzzyDate::new_day(
             Year::new(2000).unwrap(),
             Month::new(12).unwrap(),
@@ -597,55 +586,33 @@ mod tests {
         let range_end = FuzzyDate::new_year(Year::new(1990).unwrap()).unwrap();
         let range = FuzzyDateRange::new(range_start, range_end).unwrap();
 
-        let date = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(15, 1990, 6).unwrap(),
-        )
-        .unwrap();
+        let date = FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(15, 1990, 6).unwrap())
+            .unwrap();
         assert!(range.contains(&date), "1990/1990 should contain 1990-06-15");
     }
 
     #[test]
     fn test_contains_mixed_precision_month_contains_day() {
         // Month range should contain day within that month
-        let range_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let range_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let range_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let range_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
         let range = FuzzyDateRange::new(range_start, range_end).unwrap();
 
-        let date = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(15, 1990, 6).unwrap(),
-        )
-        .unwrap();
-        assert!(
-            range.contains(&date),
-            "1990-06/1990-06 should contain 1990-06-15"
-        );
+        let date = FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(15, 1990, 6).unwrap())
+            .unwrap();
+        assert!(range.contains(&date), "1990-06/1990-06 should contain 1990-06-15");
     }
 
     #[test]
     fn test_contains_mixed_precision_month_not_contains_different_month() {
         // Month range should not contain day from different month
-        let range_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let range_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let range_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let range_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
         let range = FuzzyDateRange::new(range_start, range_end).unwrap();
 
-        let date = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(7).unwrap(),
-            Day::new(1, 1990, 7).unwrap(),
-        )
-        .unwrap();
-        assert!(
-            !range.contains(&date),
-            "1990-06/1990-06 should not contain 1990-07-01"
-        );
+        let date = FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(7).unwrap(), Day::new(1, 1990, 7).unwrap())
+            .unwrap();
+        assert!(!range.contains(&date), "1990-06/1990-06 should not contain 1990-07-01");
     }
 
     #[test]
@@ -655,20 +622,12 @@ mod tests {
         let range1_end = FuzzyDate::new_year(Year::new(1990).unwrap()).unwrap();
         let range1 = FuzzyDateRange::new(range1_start, range1_end).unwrap();
 
-        let range2_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let range2_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(8).unwrap()).unwrap();
+        let range2_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let range2_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(8).unwrap()).unwrap();
         let range2 = FuzzyDateRange::new(range2_start, range2_end).unwrap();
 
-        assert!(
-            range1.overlaps(&range2),
-            "1990/1990 should overlap 1990-06/1990-08"
-        );
-        assert!(
-            range2.overlaps(&range1),
-            "1990-06/1990-08 should overlap 1990/1990"
-        );
+        assert!(range1.overlaps(&range2), "1990/1990 should overlap 1990-06/1990-08");
+        assert!(range2.overlaps(&range1), "1990-06/1990-08 should overlap 1990/1990");
     }
 
     #[test]
@@ -678,20 +637,12 @@ mod tests {
         let range1_end = FuzzyDate::new_year(Year::new(1990).unwrap()).unwrap();
         let range1 = FuzzyDateRange::new(range1_start, range1_end).unwrap();
 
-        let range2_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let range2_end =
-            FuzzyDate::new_month(Year::new(1991).unwrap(), Month::new(2).unwrap()).unwrap();
+        let range2_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let range2_end = FuzzyDate::new_month(Year::new(1991).unwrap(), Month::new(2).unwrap()).unwrap();
         let range2 = FuzzyDateRange::new(range2_start, range2_end).unwrap();
 
-        assert!(
-            range1.overlaps(&range2),
-            "1990/1990 should overlap 1990-06/1991-02"
-        );
-        assert!(
-            range2.overlaps(&range1),
-            "1990-06/1991-02 should overlap 1990/1990"
-        );
+        assert!(range1.overlaps(&range2), "1990/1990 should overlap 1990-06/1991-02");
+        assert!(range2.overlaps(&range1), "1990-06/1991-02 should overlap 1990/1990");
     }
 
     #[test]
@@ -701,43 +652,27 @@ mod tests {
         let outer_end = FuzzyDate::new_year(Year::new(1990).unwrap()).unwrap();
         let outer = FuzzyDateRange::new(outer_start, outer_end).unwrap();
 
-        let inner_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let inner_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(8).unwrap()).unwrap();
+        let inner_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let inner_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(8).unwrap()).unwrap();
         let inner = FuzzyDateRange::new(inner_start, inner_end).unwrap();
 
-        assert!(
-            inner.is_within(&outer),
-            "1990-06/1990-08 should be within 1990/1990"
-        );
-        assert!(
-            !outer.is_within(&inner),
-            "1990/1990 should not be within 1990-06/1990-08"
-        );
+        assert!(inner.is_within(&outer), "1990-06/1990-08 should be within 1990/1990");
+        assert!(!outer.is_within(&inner), "1990/1990 should not be within 1990-06/1990-08");
     }
 
     #[test]
     fn test_is_within_mixed_precision_day_within_month() {
         // Day range is within month range
-        let outer_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let outer_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let outer_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let outer_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
         let outer = FuzzyDateRange::new(outer_start, outer_end).unwrap();
 
-        let inner_start = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(10, 1990, 6).unwrap(),
-        )
-        .unwrap();
-        let inner_end = FuzzyDate::new_day(
-            Year::new(1990).unwrap(),
-            Month::new(6).unwrap(),
-            Day::new(20, 1990, 6).unwrap(),
-        )
-        .unwrap();
+        let inner_start =
+            FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(10, 1990, 6).unwrap())
+                .unwrap();
+        let inner_end =
+            FuzzyDate::new_day(Year::new(1990).unwrap(), Month::new(6).unwrap(), Day::new(20, 1990, 6).unwrap())
+                .unwrap();
         let inner = FuzzyDateRange::new(inner_start, inner_end).unwrap();
 
         assert!(
@@ -749,21 +684,14 @@ mod tests {
     #[test]
     fn test_is_within_mixed_precision_extends_beyond() {
         // Range extending beyond should not be within
-        let outer_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
-        let outer_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(8).unwrap()).unwrap();
+        let outer_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(6).unwrap()).unwrap();
+        let outer_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(8).unwrap()).unwrap();
         let outer = FuzzyDateRange::new(outer_start, outer_end).unwrap();
 
-        let inner_start =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(7).unwrap()).unwrap();
-        let inner_end =
-            FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(9).unwrap()).unwrap();
+        let inner_start = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(7).unwrap()).unwrap();
+        let inner_end = FuzzyDate::new_month(Year::new(1990).unwrap(), Month::new(9).unwrap()).unwrap();
         let inner = FuzzyDateRange::new(inner_start, inner_end).unwrap();
 
-        assert!(
-            !inner.is_within(&outer),
-            "1990-07/1990-09 should not be within 1990-06/1990-08"
-        );
+        assert!(!inner.is_within(&outer), "1990-07/1990-09 should not be within 1990-06/1990-08");
     }
 }

@@ -1,22 +1,18 @@
-#![cfg_attr(
-    not(test),
-    deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)
-)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic))]
 
 mod consts;
 mod prelude;
 mod range;
 mod types;
 
+use std::{cmp::Ordering, convert::TryFrom, str::FromStr};
+
 pub use consts::*;
 pub use range::{FuzzyDateRange, RangeError};
+use types::days_in_month;
 pub use types::{Day, Month, Year};
 
 use crate::prelude::*;
-use std::cmp::Ordering;
-use std::convert::TryFrom;
-use std::str::FromStr;
-use types::days_in_month;
 
 /// Represents a date with varying levels of precision.
 /// This allows representing dates where only some components are known,
@@ -26,16 +22,13 @@ pub enum FuzzyDate {
     /// Full date with day, month, and year
     #[display(fmt = "{:04}-{:02}-{:02}", "year.get()", "month.get()", "day.get()")]
     Day {
-        year: types::Year,
+        year:  types::Year,
         month: types::Month,
-        day: types::Day,
+        day:   types::Day,
     },
     /// Month and year only
     #[display(fmt = "{:04}-{:02}", "year.get()", "month.get()")]
-    Month {
-        year: types::Year,
-        month: types::Month,
-    },
+    Month { year: types::Year, month: types::Month },
     /// Year only
     #[display(fmt = "{:04}", "year.get()")]
     Year { year: types::Year },
@@ -70,11 +63,7 @@ impl FuzzyDate {
     ///
     /// # Errors
     /// This function currently never returns an error, but the Result type is kept for API consistency.
-    pub const fn new_day(
-        year: types::Year,
-        month: types::Month,
-        day: types::Day,
-    ) -> Result<Self, ParseError> {
+    pub const fn new_day(year: types::Year, month: types::Month, day: types::Day) -> Result<Self, ParseError> {
         Ok(Self::Day { year, month, day })
     }
 
@@ -160,26 +149,24 @@ impl FuzzyDate {
                 let month_nz = Self::validate_and_convert_month(m)?;
                 let day_nz = Self::validate_and_convert_day(year, m, d)?;
                 Ok(Self::Day {
-                    year: year_nz,
+                    year:  year_nz,
                     month: month_nz,
-                    day: day_nz,
+                    day:   day_nz,
                 })
-            }
+            },
             (Some(m), None) => {
                 let year_nz = Self::validate_and_convert_year(year)?;
                 let month_nz = Self::validate_and_convert_month(m)?;
                 Ok(Self::Month {
-                    year: year_nz,
+                    year:  year_nz,
                     month: month_nz,
                 })
-            }
+            },
             (None, None) => {
                 let year_nz = Self::validate_and_convert_year(year)?;
                 Ok(Self::Year { year: year_nz })
-            }
-            (None, Some(d)) => Err(ParseError::InvalidFormat(format!(
-                "Cannot have day {d} without month"
-            ))),
+            },
+            (None, Some(d)) => Err(ParseError::InvalidFormat(format!("Cannot have day {d} without month"))),
         }
     }
 }
@@ -243,10 +230,7 @@ impl FromStr for FuzzyDate {
             }
         } else if has_slash {
             // Month-first format: MM/YYYY or MM/DD/YYYY
-            let parts: Vec<&str> = trimmed
-                .split(MONTH_FIRST_SEPARATOR)
-                .map(str::trim)
-                .collect();
+            let parts: Vec<&str> = trimmed.split(MONTH_FIRST_SEPARATOR).map(str::trim).collect();
             match parts.len() {
                 2 => Self::parse_month_year(&parts),
                 3 => Self::parse_full_date(&parts),
@@ -266,14 +250,12 @@ impl FromStr for FuzzyDate {
 impl FuzzyDate {
     /// Helper to parse u16 with better error messages
     fn parse_u16(s: &str) -> Result<u16, ParseError> {
-        s.parse::<u16>()
-            .map_err(|_| ParseError::InvalidFormat(s.to_owned()))
+        s.parse::<u16>().map_err(|_| ParseError::InvalidFormat(s.to_owned()))
     }
 
     /// Helper to parse u8 with better error messages
     fn parse_u8(s: &str) -> Result<u8, ParseError> {
-        s.parse::<u8>()
-            .map_err(|_| ParseError::InvalidFormat(s.to_owned()))
+        s.parse::<u8>().map_err(|_| ParseError::InvalidFormat(s.to_owned()))
     }
 
     /// Validates and creates a Year type
@@ -380,11 +362,7 @@ impl FuzzyDate {
     pub const fn upper_bound_inclusive(&self) -> (u16, u8, u8) {
         match *self {
             Self::Day { year, month, day } => (year.get(), month.get(), day.get()),
-            Self::Month { year, month } => (
-                year.get(),
-                month.get(),
-                days_in_month(year.get(), month.get()),
-            ),
+            Self::Month { year, month } => (year.get(), month.get(), days_in_month(year.get(), month.get())),
             Self::Year { year } => (year.get(), DECEMBER, DAYS_IN_MONTH[DECEMBER as usize]),
         }
     }
@@ -394,9 +372,7 @@ impl FuzzyDate {
     pub fn upper_bound_exclusive(&self) -> Option<(u16, u8, u8)> {
         match *self {
             Self::Day { year, month, day } => next_day(year.get(), month.get(), day.get()),
-            Self::Month { year, month } => {
-                next_month(year.get(), month.get()).map(|(ny, nm)| (ny, nm, MIN_DAY))
-            }
+            Self::Month { year, month } => next_month(year.get(), month.get()).map(|(ny, nm)| (ny, nm, MIN_DAY)),
             Self::Year { year } => {
                 let y = year.get();
                 if y >= MAX_YEAR {
@@ -404,7 +380,7 @@ impl FuzzyDate {
                 } else {
                     Some((y + 1, JANUARY, MIN_DAY))
                 }
-            }
+            },
         }
     }
 
@@ -435,7 +411,7 @@ impl Ord for FuzzyDate {
             Ordering::Equal => {
                 // …then break ties by precision (less precise first).
                 self.precision_rank().cmp(&other.precision_rank())
-            }
+            },
             ord => ord,
         }
     }
@@ -475,14 +451,11 @@ mod tests {
     #[test]
     fn test_parse_full_date() {
         let date = "08/15/1991".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Day {
-                year: Year::new(1991).unwrap(),
-                month: Month::new(8).unwrap(),
-                day: Day::new(15, 1991, 8).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Day {
+            year:  Year::new(1991).unwrap(),
+            month: Month::new(8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
+        });
         assert_eq!(date.year(), 1991);
         assert_eq!(date.month(), Some(8));
         assert_eq!(date.day(), Some(15));
@@ -491,26 +464,20 @@ mod tests {
     #[test]
     fn test_parse_iso_full_date() {
         let date = "1991-08-15".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Day {
-                year: Year::new(1991).unwrap(),
-                month: Month::new(8).unwrap(),
-                day: Day::new(15, 1991, 8).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Day {
+            year:  Year::new(1991).unwrap(),
+            month: Month::new(8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
+        });
     }
 
     #[test]
     fn test_parse_month_year() {
         let date = "08/1991".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Month {
-                year: Year::new(1991).unwrap(),
-                month: Month::new(8).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Month {
+            year:  Year::new(1991).unwrap(),
+            month: Month::new(8).unwrap(),
+        });
         assert_eq!(date.year(), 1991);
         assert_eq!(date.month(), Some(8));
         assert_eq!(date.day(), None);
@@ -519,24 +486,18 @@ mod tests {
     #[test]
     fn test_parse_iso_month_year() {
         let date = "1991-08".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Month {
-                year: Year::new(1991).unwrap(),
-                month: Month::new(8).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Month {
+            year:  Year::new(1991).unwrap(),
+            month: Month::new(8).unwrap(),
+        });
     }
 
     #[test]
     fn test_parse_year_only() {
         let date = "1991".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Year {
-                year: Year::new(1991).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Year {
+            year: Year::new(1991).unwrap(),
+        });
         assert_eq!(date.year(), 1991);
         assert_eq!(date.month(), None);
         assert_eq!(date.day(), None);
@@ -553,13 +514,10 @@ mod tests {
     #[test]
     fn test_parse_with_whitespace() {
         let date = " 08 / 1991 ".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Month {
-                year: Year::new(1991).unwrap(),
-                month: Month::new(8).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Month {
+            year:  Year::new(1991).unwrap(),
+            month: Month::new(8).unwrap(),
+        });
     }
 
     #[test]
@@ -578,14 +536,11 @@ mod tests {
     fn test_leap_year() {
         // 2020 is a leap year
         let date = "02/29/2020".parse::<FuzzyDate>().unwrap();
-        assert_eq!(
-            date,
-            FuzzyDate::Day {
-                year: Year::new(2020).unwrap(),
-                month: Month::new(2).unwrap(),
-                day: Day::new(29, 2020, 2).unwrap()
-            }
-        );
+        assert_eq!(date, FuzzyDate::Day {
+            year:  Year::new(2020).unwrap(),
+            month: Month::new(2).unwrap(),
+            day:   Day::new(29, 2020, 2).unwrap(),
+        });
 
         // 2021 is not a leap year
         let result = "02/29/2021".parse::<FuzzyDate>();
@@ -595,14 +550,14 @@ mod tests {
     #[test]
     fn test_display() {
         let full = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
-            day: Day::new(15, 1991, 8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
         };
         assert_eq!(full.to_string(), "1991-08-15");
 
         let month_year = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         assert_eq!(month_year.to_string(), "1991-08");
@@ -625,7 +580,7 @@ mod tests {
     #[test]
     fn test_bounds_month_year() {
         let d = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         assert_eq!(d.lower_bound(), (1991, 8, 1));
@@ -635,16 +590,16 @@ mod tests {
     #[test]
     fn test_bounds_full_rollover_and_leap() {
         let d1 = FuzzyDate::Day {
-            year: Year::new(2020).unwrap(),
+            year:  Year::new(2020).unwrap(),
             month: Month::new(2).unwrap(),
-            day: Day::new(29, 2020, 2).unwrap(),
+            day:   Day::new(29, 2020, 2).unwrap(),
         };
         assert_eq!(d1.lower_bound(), (2020, 2, 29));
         assert_eq!(d1.upper_bound_exclusive(), Some((2020, 3, 1)));
         let d2 = FuzzyDate::Day {
-            year: Year::new(2021).unwrap(),
+            year:  Year::new(2021).unwrap(),
             month: Month::new(12).unwrap(),
-            day: Day::new(31, 2021, 12).unwrap(),
+            day:   Day::new(31, 2021, 12).unwrap(),
         };
         assert_eq!(d2.upper_bound_exclusive(), Some((2022, 1, 1)));
     }
@@ -660,15 +615,15 @@ mod tests {
         assert!(d1 < d2);
 
         let d3 = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         assert!(d2 < d3); // Year-only is less specific, comes before month-year
 
         let d4 = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
-            day: Day::new(15, 1991, 8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
         };
         assert!(d3 < d4); // Month-year comes before full date in same month
     }
@@ -680,21 +635,21 @@ mod tests {
             year: Year::new(1991).unwrap(),
         };
         let month = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(1).unwrap(),
         };
         let full = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(1).unwrap(),
-            day: Day::new(1, 1991, 1).unwrap(),
+            day:   Day::new(1, 1991, 1).unwrap(),
         };
         assert!(year < month);
         assert!(month < full);
         // Sanity: anything before the lower bound should still come first
         let prev_day = FuzzyDate::Day {
-            year: Year::new(1990).unwrap(),
+            year:  Year::new(1990).unwrap(),
             month: Month::new(12).unwrap(),
-            day: Day::new(31, 1990, 12).unwrap(),
+            day:   Day::new(31, 1990, 12).unwrap(),
         };
         assert!(prev_day < year);
     }
@@ -702,7 +657,7 @@ mod tests {
     #[test]
     fn test_serde() {
         let date = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         let json = serde_json::to_string(&date).unwrap();
@@ -758,16 +713,16 @@ mod tests {
 
         // December 9999 should also be None
         let d = FuzzyDate::Month {
-            year: Year::new(9999).unwrap(),
+            year:  Year::new(9999).unwrap(),
             month: Month::new(12).unwrap(),
         };
         assert_eq!(d.upper_bound_exclusive(), None);
 
         // Last day of 9999 should be None
         let d = FuzzyDate::Day {
-            year: Year::new(9999).unwrap(),
+            year:  Year::new(9999).unwrap(),
             month: Month::new(12).unwrap(),
-            day: Day::new(31, 9999, 12).unwrap(),
+            day:   Day::new(31, 9999, 12).unwrap(),
         };
         assert_eq!(d.upper_bound_exclusive(), None);
     }
@@ -776,29 +731,29 @@ mod tests {
     fn test_upper_bound_inclusive() {
         // Full date: same as itself
         let d = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
-            day: Day::new(15, 1991, 8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
         };
         assert_eq!(d.upper_bound_inclusive(), (1991, 8, 15));
 
         // Month: last day of month
         let d = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         assert_eq!(d.upper_bound_inclusive(), (1991, 8, 31));
 
         // February leap year
         let d = FuzzyDate::Month {
-            year: Year::new(2020).unwrap(),
+            year:  Year::new(2020).unwrap(),
             month: Month::new(2).unwrap(),
         };
         assert_eq!(d.upper_bound_inclusive(), (2020, 2, 29));
 
         // February non-leap year
         let d = FuzzyDate::Month {
-            year: Year::new(2021).unwrap(),
+            year:  Year::new(2021).unwrap(),
             month: Month::new(2).unwrap(),
         };
         assert_eq!(d.upper_bound_inclusive(), (2021, 2, 28));
@@ -814,9 +769,9 @@ mod tests {
     fn test_to_columns_and_from_columns() {
         // Full date
         let date = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
-            day: Day::new(15, 1991, 8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
         };
         let (y, m, d) = date.to_columns();
         assert_eq!((y, m, d), (1991, Some(8), Some(15)));
@@ -825,7 +780,7 @@ mod tests {
 
         // Month year
         let date = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         let (y, m, d) = date.to_columns();
@@ -897,20 +852,20 @@ mod tests {
     #[test]
     fn test_ordering_across_boundaries() {
         let jan31 = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(1).unwrap(),
-            day: Day::new(31, 1991, 1).unwrap(),
+            day:   Day::new(31, 1991, 1).unwrap(),
         };
 
         let feb = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(2).unwrap(),
         };
 
         let feb01 = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(2).unwrap(),
-            day: Day::new(1, 1991, 2).unwrap(),
+            day:   Day::new(1, 1991, 2).unwrap(),
         };
 
         assert!(jan31 < feb);
@@ -931,7 +886,7 @@ mod tests {
 
         // Month and year
         let date = FuzzyDate::Month {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         };
         let json = serde_json::to_string(&date).unwrap();
@@ -941,9 +896,9 @@ mod tests {
 
         // Full date
         let date = FuzzyDate::Day {
-            year: Year::new(1991).unwrap(),
+            year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
-            day: Day::new(15, 1991, 8).unwrap(),
+            day:   Day::new(15, 1991, 8).unwrap(),
         };
         let json = serde_json::to_string(&date).unwrap();
         assert_eq!(json, r#""1991-08-15""#);
@@ -993,17 +948,11 @@ mod tests {
         // Too many hyphens in ISO format
         let result = "2000-01-15-23".parse::<FuzzyDate>();
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Too many - separators"));
+        assert!(result.unwrap_err().to_string().contains("Too many - separators"));
 
         // Too many slashes in month-first format
         let result = "01/15/2000/extra".parse::<FuzzyDate>();
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Too many / separators"));
+        assert!(result.unwrap_err().to_string().contains("Too many / separators"));
     }
 }
