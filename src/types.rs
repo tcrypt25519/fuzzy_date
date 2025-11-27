@@ -1,16 +1,16 @@
 use std::{
     fmt,
-    num::{NonZeroU16, NonZeroU8},
+    num::{NonZeroU8, NonZeroU16},
 };
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    ParseError,
     consts::{
         CENTURY_CYCLE, DAYS_IN_MONTH, FEBRUARY, FEBRUARY_DAYS_LEAP, GREGORIAN_CYCLE, LEAP_YEAR_CYCLE, MAX_MONTH,
         MAX_YEAR, MIN_DAY,
     },
-    ParseError,
 };
 
 /// A year value guaranteed to be in the range `1..=MAX_YEAR` (1..=9999)
@@ -171,7 +171,8 @@ impl fmt::Display for Day {
 // Helper functions
 
 pub const fn is_leap_year(year: u16) -> bool {
-    (year % LEAP_YEAR_CYCLE == 0 && year % CENTURY_CYCLE != 0) || (year % GREGORIAN_CYCLE == 0)
+    (year.is_multiple_of(LEAP_YEAR_CYCLE) && !year.is_multiple_of(CENTURY_CYCLE))
+        || year.is_multiple_of(GREGORIAN_CYCLE)
 }
 
 pub const fn days_in_month(year: u16, month: u8) -> u8 {

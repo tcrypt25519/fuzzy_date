@@ -2,7 +2,7 @@ use std::{cmp::Ordering, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{prelude::*, FuzzyDate, ParseError, RANGE_SEPARATOR};
+use crate::{FuzzyDate, ParseError, RANGE_SEPARATOR, prelude::*};
 
 /// Represents a range between two fuzzy dates (inclusive).
 /// The start date must be less than or equal to the end date.
