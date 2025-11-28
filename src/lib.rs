@@ -85,10 +85,10 @@ impl FuzzyDate {
 
     /// Returns the day component if present (as u8 for convenience)
     pub const fn day(&self) -> Option<u8> {
-        match self {
-            Self::Day { day, .. } => Some(day.get()),
-            Self::Month { .. } | Self::Year { .. } => None,
+        if let Self::Day { day, .. } = self {
+            return Some(day.get());
         }
+        None
     }
 
     /// Returns the month component if present (as u8 for convenience)
