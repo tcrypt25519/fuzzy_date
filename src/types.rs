@@ -17,6 +17,7 @@ use crate::{
 /// Uses `NonZeroU16` internally, so 0 is not a valid year.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u16", into = "u16")]
+#[repr(transparent)]
 pub struct Year(NonZeroU16);
 
 impl Year {
@@ -53,6 +54,20 @@ impl From<Year> for u16 {
     }
 }
 
+impl TryFrom<NonZeroU16> for Year {
+    type Error = ParseError;
+
+    fn try_from(value: NonZeroU16) -> Result<Self, Self::Error> {
+        Self::new(value.get())
+    }
+}
+
+impl From<Year> for NonZeroU16 {
+    fn from(year: Year) -> Self {
+        year.0
+    }
+}
+
 impl fmt::Display for Year {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -63,6 +78,7 @@ impl fmt::Display for Year {
 /// Uses `NonZeroU8` internally, so 0 is not a valid month.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u8", into = "u8")]
+#[repr(transparent)]
 pub struct Month(NonZeroU8);
 
 impl Month {
@@ -99,6 +115,20 @@ impl From<Month> for u8 {
     }
 }
 
+impl TryFrom<NonZeroU8> for Month {
+    type Error = ParseError;
+
+    fn try_from(value: NonZeroU8) -> Result<Self, Self::Error> {
+        Self::new(value.get())
+    }
+}
+
+impl From<Month> for NonZeroU8 {
+    fn from(month: Month) -> Self {
+        month.0
+    }
+}
+
 impl fmt::Display for Month {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -109,6 +139,7 @@ impl fmt::Display for Month {
 /// Uses `NonZeroU8` internally, so 0 is not a valid day.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u8", into = "u8")]
+#[repr(transparent)]
 pub struct Day(NonZeroU8);
 
 impl Day {
@@ -162,6 +193,12 @@ impl From<Day> for u8 {
     }
 }
 
+impl From<Day> for NonZeroU8 {
+    fn from(day: Day) -> Self {
+        day.0
+    }
+}
+
 impl fmt::Display for Day {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -187,6 +224,8 @@ pub const fn days_in_month(year: u16, month: u8) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    use std::num::{NonZeroU8, NonZeroU16};
+
     use super::*;
 
     #[test]
@@ -237,6 +276,22 @@ mod tests {
         let year = Year::new(2024).unwrap();
         let value: u16 = year.into();
         assert_eq!(value, 2024);
+    }
+
+    #[test]
+    fn test_year_nonzero_conversions() {
+        let nz = NonZeroU16::new(2024).unwrap();
+        let year = Year::try_from(nz).unwrap();
+        assert_eq!(year.get(), 2024);
+        let back: NonZeroU16 = year.into();
+        assert_eq!(back, nz);
+    }
+
+    #[test]
+    fn test_year_nonzero_invalid() {
+        let nz = NonZeroU16::new(10000).unwrap();
+        let result = Year::try_from(nz);
+        assert!(matches!(result, Err(ParseError::InvalidYear(10000))));
     }
 
     #[test]
@@ -309,6 +364,22 @@ mod tests {
         let month = Month::new(8).unwrap();
         let value: u8 = month.into();
         assert_eq!(value, 8);
+    }
+
+    #[test]
+    fn test_month_nonzero_conversions() {
+        let nz = NonZeroU8::new(8).unwrap();
+        let month = Month::try_from(nz).unwrap();
+        assert_eq!(month.get(), 8);
+        let back: NonZeroU8 = month.into();
+        assert_eq!(back, nz);
+    }
+
+    #[test]
+    fn test_month_nonzero_invalid() {
+        let nz = NonZeroU8::new(13).unwrap();
+        let result = Month::try_from(nz);
+        assert!(matches!(result, Err(ParseError::InvalidMonth(13))));
     }
 
     #[test]
@@ -397,6 +468,13 @@ mod tests {
         let day = Day::new(15, 2024, 8).unwrap();
         let value: u8 = day.into();
         assert_eq!(value, 15);
+    }
+
+    #[test]
+    fn test_day_into_nonzero() {
+        let day = Day::new(15, 2024, 8).unwrap();
+        let nz: NonZeroU8 = day.into();
+        assert_eq!(nz.get(), 15);
     }
 
     #[test]

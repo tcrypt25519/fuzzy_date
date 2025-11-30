@@ -347,28 +347,28 @@ mod tests {
     #[test]
     fn test_from_str_with_slash() {
         let range = "1990/2000".parse::<FuzzyDateRange>().unwrap();
-        assert_eq!(range.start().year(), 1990);
-        assert_eq!(range.end().year(), 2000);
+        assert_eq!(range.start().year(), Year::new(1990).unwrap());
+        assert_eq!(range.end().year(), Year::new(2000).unwrap());
     }
 
     #[test]
     fn test_from_str_with_month_precision() {
         let range = "1990-01/2000-12".parse::<FuzzyDateRange>().unwrap();
-        assert_eq!(range.start().year(), 1990);
-        assert_eq!(range.start().month(), Some(1));
-        assert_eq!(range.end().year(), 2000);
-        assert_eq!(range.end().month(), Some(12));
+        assert_eq!(range.start().year(), Year::new(1990).unwrap());
+        assert_eq!(range.start().month(), Some(Month::new(1).unwrap()));
+        assert_eq!(range.end().year(), Year::new(2000).unwrap());
+        assert_eq!(range.end().month(), Some(Month::new(12).unwrap()));
     }
 
     #[test]
     fn test_from_str_with_day_precision() {
         let range = "1990-01-15/2000-12-31".parse::<FuzzyDateRange>().unwrap();
-        assert_eq!(range.start().year(), 1990);
-        assert_eq!(range.start().month(), Some(1));
-        assert_eq!(range.start().day(), Some(15));
-        assert_eq!(range.end().year(), 2000);
-        assert_eq!(range.end().month(), Some(12));
-        assert_eq!(range.end().day(), Some(31));
+        assert_eq!(range.start().year(), Year::new(1990).unwrap());
+        assert_eq!(range.start().month(), Some(Month::new(1).unwrap()));
+        assert_eq!(range.start().day(), Some(Day::new(15, 1990, 1).unwrap()));
+        assert_eq!(range.end().year(), Year::new(2000).unwrap());
+        assert_eq!(range.end().month(), Some(Month::new(12).unwrap()));
+        assert_eq!(range.end().day(), Some(Day::new(31, 2000, 12).unwrap()));
     }
 
     #[test]
@@ -464,10 +464,10 @@ mod tests {
     #[test]
     fn test_from_str_mixed_precision_month_to_year() {
         let range = "1991-08/2025".parse::<FuzzyDateRange>().unwrap();
-        assert_eq!(range.start().year(), 1991);
-        assert_eq!(range.start().month(), Some(8));
+        assert_eq!(range.start().year(), Year::new(1991).unwrap());
+        assert_eq!(range.start().month(), Some(Month::new(8).unwrap()));
         assert_eq!(range.start().day(), None);
-        assert_eq!(range.end().year(), 2025);
+        assert_eq!(range.end().year(), Year::new(2025).unwrap());
         assert_eq!(range.end().month(), None);
         assert_eq!(range.end().day(), None);
     }
@@ -475,21 +475,21 @@ mod tests {
     #[test]
     fn test_from_str_mixed_precision_year_to_day() {
         let range = "1990/2025-12-31".parse::<FuzzyDateRange>().unwrap();
-        assert_eq!(range.start().year(), 1990);
+        assert_eq!(range.start().year(), Year::new(1990).unwrap());
         assert_eq!(range.start().month(), None);
-        assert_eq!(range.end().year(), 2025);
-        assert_eq!(range.end().month(), Some(12));
-        assert_eq!(range.end().day(), Some(31));
+        assert_eq!(range.end().year(), Year::new(2025).unwrap());
+        assert_eq!(range.end().month(), Some(Month::new(12).unwrap()));
+        assert_eq!(range.end().day(), Some(Day::new(31, 2025, 12).unwrap()));
     }
 
     #[test]
     fn test_from_str_mixed_precision_day_to_month() {
         let range = "1990-01-15/2025-12".parse::<FuzzyDateRange>().unwrap();
-        assert_eq!(range.start().year(), 1990);
-        assert_eq!(range.start().month(), Some(1));
-        assert_eq!(range.start().day(), Some(15));
-        assert_eq!(range.end().year(), 2025);
-        assert_eq!(range.end().month(), Some(12));
+        assert_eq!(range.start().year(), Year::new(1990).unwrap());
+        assert_eq!(range.start().month(), Some(Month::new(1).unwrap()));
+        assert_eq!(range.start().day(), Some(Day::new(15, 1990, 1).unwrap()));
+        assert_eq!(range.end().year(), Year::new(2025).unwrap());
+        assert_eq!(range.end().month(), Some(Month::new(12).unwrap()));
         assert_eq!(range.end().day(), None);
     }
 

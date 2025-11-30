@@ -83,47 +83,24 @@ impl FuzzyDate {
         Ok(Self::Year { year })
     }
 
-    /// Returns the day component if present (as u8 for convenience)
-    pub const fn day(&self) -> Option<u8> {
-        if let Self::Day { day, .. } = self {
-            return Some(day.get());
-        }
-        None
-    }
-
-    /// Returns the month component if present (as u8 for convenience)
-    pub const fn month(&self) -> Option<u8> {
-        match self {
-            Self::Day { month, .. } | Self::Month { month, .. } => Some(month.get()),
-            Self::Year { .. } => None,
-        }
-    }
-
-    /// Returns the year component (always present)
-    pub const fn year(&self) -> u16 {
-        match self {
-            Self::Day { year, .. } | Self::Month { year, .. } | Self::Year { year } => year.get(),
-        }
-    }
-
-    /// Returns the Day type if present
-    pub const fn day_typed(&self) -> Option<types::Day> {
+    /// Returns the day component if present.
+    pub const fn day(&self) -> Option<types::Day> {
         match self {
             Self::Day { day, .. } => Some(*day),
             Self::Month { .. } | Self::Year { .. } => None,
         }
     }
 
-    /// Returns the Month type if present
-    pub const fn month_typed(&self) -> Option<types::Month> {
+    /// Returns the month component if present.
+    pub const fn month(&self) -> Option<types::Month> {
         match self {
             Self::Day { month, .. } | Self::Month { month, .. } => Some(*month),
             Self::Year { .. } => None,
         }
     }
 
-    /// Returns the Year type (always present)
-    pub const fn year_typed(&self) -> types::Year {
+    /// Returns the year component (always present).
+    pub const fn year(&self) -> types::Year {
         match self {
             Self::Day { year, .. } | Self::Month { year, .. } | Self::Year { year } => *year,
         }
@@ -456,9 +433,9 @@ mod tests {
             month: Month::new(8).unwrap(),
             day:   Day::new(15, 1991, 8).unwrap(),
         });
-        assert_eq!(date.year(), 1991);
-        assert_eq!(date.month(), Some(8));
-        assert_eq!(date.day(), Some(15));
+        assert_eq!(date.year(), Year::new(1991).unwrap());
+        assert_eq!(date.month(), Some(Month::new(8).unwrap()));
+        assert_eq!(date.day(), Some(Day::new(15, 1991, 8).unwrap()));
     }
 
     #[test]
@@ -478,8 +455,8 @@ mod tests {
             year:  Year::new(1991).unwrap(),
             month: Month::new(8).unwrap(),
         });
-        assert_eq!(date.year(), 1991);
-        assert_eq!(date.month(), Some(8));
+        assert_eq!(date.year(), Year::new(1991).unwrap());
+        assert_eq!(date.month(), Some(Month::new(8).unwrap()));
         assert_eq!(date.day(), None);
     }
 
@@ -498,7 +475,7 @@ mod tests {
         assert_eq!(date, FuzzyDate::Year {
             year: Year::new(1991).unwrap(),
         });
-        assert_eq!(date.year(), 1991);
+        assert_eq!(date.year(), Year::new(1991).unwrap());
         assert_eq!(date.month(), None);
         assert_eq!(date.day(), None);
     }
@@ -806,19 +783,19 @@ mod tests {
     fn test_try_from_tuple() {
         // Full date
         let date: FuzzyDate = (1991, Some(8), Some(15)).try_into().unwrap();
-        assert_eq!(date.year(), 1991);
-        assert_eq!(date.month(), Some(8));
-        assert_eq!(date.day(), Some(15));
+        assert_eq!(date.year(), Year::new(1991).unwrap());
+        assert_eq!(date.month(), Some(Month::new(8).unwrap()));
+        assert_eq!(date.day(), Some(Day::new(15, 1991, 8).unwrap()));
 
         // Month year
         let date: FuzzyDate = (1991, Some(8), None).try_into().unwrap();
-        assert_eq!(date.year(), 1991);
-        assert_eq!(date.month(), Some(8));
+        assert_eq!(date.year(), Year::new(1991).unwrap());
+        assert_eq!(date.month(), Some(Month::new(8).unwrap()));
         assert_eq!(date.day(), None);
 
         // Year only
         let date: FuzzyDate = (1991, None, None).try_into().unwrap();
-        assert_eq!(date.year(), 1991);
+        assert_eq!(date.year(), Year::new(1991).unwrap());
         assert_eq!(date.month(), None);
         assert_eq!(date.day(), None);
     }
