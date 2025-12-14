@@ -70,6 +70,44 @@ assert_eq!(month.upper_bound_exclusive(), Some((1991, 9, 1)));
 
 ### Date ranges
 
+`FuzzyDateRange` represents a range between two fuzzy dates. Ranges are parsed
+using `/` as the separator and formatted in the same way.
+
+#### Range parsing
+
+```rust
+use fuzzy_date::FuzzyDateRange;
+
+// Year precision
+let range: FuzzyDateRange = "1990/2000".parse()?;
+
+// Month precision
+let range: FuzzyDateRange = "1990-01/2000-12".parse()?;
+
+// Day precision
+let range: FuzzyDateRange = "1990-01-15/2000-12-31".parse()?;
+
+// Mixed precision (start and end can have different precision)
+let range: FuzzyDateRange = "1991-08/2025".parse()?;
+let range: FuzzyDateRange = "1990/2025-12-31".parse()?;
+```
+
+#### Range formatting
+
+Ranges are formatted as `{start}/{end}` using ISO format for each date:
+
+```rust
+use fuzzy_date::FuzzyDateRange;
+
+let range: FuzzyDateRange = "1991-08/2025".parse()?;
+assert_eq!(range.to_string(), "1991-08/2025");
+
+let range: FuzzyDateRange = "1990-01-15/2000-12-31".parse()?;
+assert_eq!(range.to_string(), "1990-01-15/2000-12-31");
+```
+
+#### Range operations
+
 ```rust
 use fuzzy_date::FuzzyDateRange;
 
@@ -85,6 +123,10 @@ assert!(range.contains(&date));
 // Check overlap with another range
 let other: FuzzyDateRange = "1998/2005".parse()?;
 assert!(range.overlaps(&other));
+
+// Check if one range is within another
+let inner: FuzzyDateRange = "1992/1998".parse()?;
+assert!(inner.is_within(&range));
 ```
 
 ### Ordering
