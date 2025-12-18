@@ -224,9 +224,8 @@ pub const fn days_in_month(year: u16, month: u8) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use std::num::{NonZeroU8, NonZeroU16};
-
     use super::*;
+    use crate::test_utils::{day, month, nz_month, nz_year, year};
 
     #[test]
     fn test_year_new_valid() {
@@ -249,19 +248,19 @@ mod tests {
 
     #[test]
     fn test_year_get() {
-        let year = Year::new(2024).unwrap();
+        let year = year(2024);
         assert_eq!(year.get(), 2024);
     }
 
     #[test]
     fn test_year_display() {
-        let year = Year::new(2024).unwrap();
+        let year = year(2024);
         assert_eq!(year.to_string(), "2024");
     }
 
     #[test]
     fn test_year_try_from_u16() {
-        let year: Year = 2024.try_into().unwrap();
+        let year: Year = 2024.try_into().expect("expected Year conversion from u16 to succeed");
         assert_eq!(year.get(), 2024);
 
         let result: Result<Year, _> = 0.try_into();
@@ -273,15 +272,15 @@ mod tests {
 
     #[test]
     fn test_year_into_u16() {
-        let year = Year::new(2024).unwrap();
+        let year = year(2024);
         let value: u16 = year.into();
         assert_eq!(value, 2024);
     }
 
     #[test]
     fn test_year_nonzero_conversions() {
-        let nz = NonZeroU16::new(2024).unwrap();
-        let year = Year::try_from(nz).unwrap();
+        let nz = nz_year(2024);
+        let year = Year::try_from(nz).expect("expected NonZeroU16 to convert to Year");
         assert_eq!(year.get(), 2024);
         let back: NonZeroU16 = year.into();
         assert_eq!(back, nz);
@@ -289,15 +288,15 @@ mod tests {
 
     #[test]
     fn test_year_nonzero_invalid() {
-        let nz = NonZeroU16::new(10000).unwrap();
+        let nz = nz_year(10000);
         let result = Year::try_from(nz);
         assert!(matches!(result, Err(ParseError::InvalidYear(10000))));
     }
 
     #[test]
     fn test_year_ordering() {
-        let y1 = Year::new(2020).unwrap();
-        let y2 = Year::new(2024).unwrap();
+        let y1 = year(2020);
+        let y2 = year(2024);
         assert!(y1 < y2);
         assert!(y2 > y1);
         assert_eq!(y1, y1);
@@ -305,11 +304,11 @@ mod tests {
 
     #[test]
     fn test_year_serde() {
-        let year = Year::new(2024).unwrap();
-        let json = serde_json::to_string(&year).unwrap();
+        let year = year(2024);
+        let json = serde_json::to_string(&year).expect("expected Year to serialize");
         assert_eq!(json, "2024");
 
-        let parsed: Year = serde_json::from_str(&json).unwrap();
+        let parsed: Year = serde_json::from_str(&json).expect("expected Year to deserialize");
         assert_eq!(year, parsed);
     }
 
@@ -337,19 +336,19 @@ mod tests {
 
     #[test]
     fn test_month_get() {
-        let month = Month::new(8).unwrap();
+        let month = month(8);
         assert_eq!(month.get(), 8);
     }
 
     #[test]
     fn test_month_display() {
-        let month = Month::new(8).unwrap();
+        let month = month(8);
         assert_eq!(month.to_string(), "8");
     }
 
     #[test]
     fn test_month_try_from_u8() {
-        let month: Month = 8.try_into().unwrap();
+        let month: Month = 8.try_into().expect("expected Month conversion from u8 to succeed");
         assert_eq!(month.get(), 8);
 
         let result: Result<Month, _> = 0.try_into();
@@ -361,15 +360,15 @@ mod tests {
 
     #[test]
     fn test_month_into_u8() {
-        let month = Month::new(8).unwrap();
+        let month = month(8);
         let value: u8 = month.into();
         assert_eq!(value, 8);
     }
 
     #[test]
     fn test_month_nonzero_conversions() {
-        let nz = NonZeroU8::new(8).unwrap();
-        let month = Month::try_from(nz).unwrap();
+        let nz = nz_month(8);
+        let month = Month::try_from(nz).expect("expected NonZeroU8 to convert to Month");
         assert_eq!(month.get(), 8);
         let back: NonZeroU8 = month.into();
         assert_eq!(back, nz);
@@ -377,15 +376,15 @@ mod tests {
 
     #[test]
     fn test_month_nonzero_invalid() {
-        let nz = NonZeroU8::new(13).unwrap();
+        let nz = nz_month(13);
         let result = Month::try_from(nz);
         assert!(matches!(result, Err(ParseError::InvalidMonth(13))));
     }
 
     #[test]
     fn test_month_ordering() {
-        let m1 = Month::new(3).unwrap();
-        let m2 = Month::new(8).unwrap();
+        let m1 = month(3);
+        let m2 = month(8);
         assert!(m1 < m2);
         assert!(m2 > m1);
         assert_eq!(m1, m1);
@@ -393,11 +392,11 @@ mod tests {
 
     #[test]
     fn test_month_serde() {
-        let month = Month::new(8).unwrap();
-        let json = serde_json::to_string(&month).unwrap();
+        let month = month(8);
+        let json = serde_json::to_string(&month).expect("expected Month to serialize");
         assert_eq!(json, "8");
 
-        let parsed: Month = serde_json::from_str(&json).unwrap();
+        let parsed: Month = serde_json::from_str(&json).expect("expected Month to deserialize");
         assert_eq!(month, parsed);
     }
 
@@ -442,20 +441,20 @@ mod tests {
 
     #[test]
     fn test_day_get() {
-        let day = Day::new(15, 2024, 8).unwrap();
+        let day = day(15, 2024, 8);
         assert_eq!(day.get(), 15);
     }
 
     #[test]
     fn test_day_display() {
-        let day = Day::new(15, 2024, 8).unwrap();
+        let day = day(15, 2024, 8);
         assert_eq!(day.to_string(), "15");
     }
 
     #[test]
     fn test_day_try_from_u8() {
         // Valid day (context-free validation)
-        let day: Day = 15.try_into().unwrap();
+        let day: Day = 15.try_into().expect("expected Day conversion from u8 to succeed");
         assert_eq!(day.get(), 15);
 
         // Zero is invalid
@@ -465,22 +464,22 @@ mod tests {
 
     #[test]
     fn test_day_into_u8() {
-        let day = Day::new(15, 2024, 8).unwrap();
+        let day = day(15, 2024, 8);
         let value: u8 = day.into();
         assert_eq!(value, 15);
     }
 
     #[test]
     fn test_day_into_nonzero() {
-        let day = Day::new(15, 2024, 8).unwrap();
+        let day = day(15, 2024, 8);
         let nz: NonZeroU8 = day.into();
         assert_eq!(nz.get(), 15);
     }
 
     #[test]
     fn test_day_ordering() {
-        let d1 = Day::new(10, 2024, 8).unwrap();
-        let d2 = Day::new(20, 2024, 8).unwrap();
+        let d1 = day(10, 2024, 8);
+        let d2 = day(20, 2024, 8);
         assert!(d1 < d2);
         assert!(d2 > d1);
         assert_eq!(d1, d1);
@@ -488,11 +487,11 @@ mod tests {
 
     #[test]
     fn test_day_serde() {
-        let day = Day::new(15, 2024, 8).unwrap();
-        let json = serde_json::to_string(&day).unwrap();
+        let day = day(15, 2024, 8);
+        let json = serde_json::to_string(&day).expect("expected Day to serialize");
         assert_eq!(json, "15");
 
-        let parsed: Day = serde_json::from_str(&json).unwrap();
+        let parsed: Day = serde_json::from_str(&json).expect("expected Day to deserialize");
         assert_eq!(day, parsed);
     }
 
