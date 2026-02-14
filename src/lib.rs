@@ -232,19 +232,7 @@ impl FromStr for FuzzyDate {
             }
         } else if has_slash {
             // Month-first format: MM/YYYY or MM/DD/YYYY
-            let parts: Vec<&str> = trimmed
-                .split(MONTH_FIRST_SEPARATOR)
-                .map(str::trim)
-                .collect();
-            match parts.len() {
-                2 => Self::parse_month_year(&parts),
-                3 => Self::parse_full_date(&parts),
-                _ => Err(ParseError::InvalidFormat(format!(
-                    "Too many {} separators: expected 1-2, found {}",
-                    MONTH_FIRST_SEPARATOR,
-                    parts.len() - 1
-                ))),
-            }
+            Self::parse_slash_date(trimmed)
         } else {
             // No delimiter, bare year
             Self::parse_year_only(trimmed)
@@ -322,35 +310,96 @@ impl FuzzyDate {
         Ok(Self::Year { year })
     }
 
-    fn parse_month_year(parts: &[&str]) -> Result<Self, ParseError> {
-        if parts.len() != 2 {
-            return Err(ParseError::InvalidFormat(parts.join("/")));
+    /// Parse a slash-delimited date (MM/YYYY or MM/DD/YYYY) without heap allocation.
+    ///
+    /// Uses a strict byte-by-byte walk: month and day fields are at most 2 ASCII
+    /// digits; any other byte in those positions is an immediate error.  The year
+    /// field consumes all remaining bytes, which must all be ASCII digits.
+    fn parse_slash_date(s: &str) -> Result<Self, ParseError> {
+        let b = s.as_bytes();
+        let err = || ParseError::InvalidFormat(s.to_string());
+        let mut pos = 0;
+
+        // --- Month: 1-2 ASCII digits, must be followed by '/' ---
+        if pos >= b.len() || !b[pos].is_ascii_digit() {
+            return Err(err());
         }
-        // Parse components - InvalidFormat if not numeric
-        let month_u8 = Self::parse_u8(parts[0])?;
-        let year_u16 = Self::parse_u16(parts[1])?;
+        pos += 1;
 
-        // Validate and convert to NonZero types
-        let month = Self::validate_and_convert_month(month_u8)?;
-        let year = Self::validate_and_convert_year(year_u16)?;
-
-        Ok(Self::Month { year, month })
-    }
-
-    fn parse_full_date(parts: &[&str]) -> Result<Self, ParseError> {
-        if parts.len() != 3 {
-            return Err(ParseError::InvalidFormat(parts.join("/")));
+        if pos < b.len() && b[pos].is_ascii_digit() {
+            // Two-digit month: the next byte must be '/'.
+            pos += 1;
+            if pos >= b.len() || b[pos] != b'/' {
+                return Err(err());
+            }
+        } else if pos >= b.len() || b[pos] != b'/' {
+            return Err(err());
         }
-        // Parse components - InvalidFormat if not numeric
-        let month_u8 = Self::parse_u8(parts[0])?;
-        let day_u8 = Self::parse_u8(parts[1])?;
-        let year_u16 = Self::parse_u16(parts[2])?;
 
-        // Validate and convert to NonZero types
+        let month_str = &s[..pos];
+        pos += 1; // skip '/'
+
+        // --- Second field: 1-2 digit day followed by '/', or year to end-of-string ---
+        if pos >= b.len() || !b[pos].is_ascii_digit() {
+            return Err(err());
+        }
+        let field2_start = pos;
+        pos += 1;
+
+        if pos < b.len() && b[pos].is_ascii_digit() {
+            pos += 1;
+            if pos < b.len() && b[pos].is_ascii_digit() {
+                // Three or more consecutive digits: this is the year.  Consume the rest.
+                while pos < b.len() {
+                    if !b[pos].is_ascii_digit() {
+                        return Err(err());
+                    }
+                    pos += 1;
+                }
+                let month_u8 = Self::parse_u8(month_str)?;
+                let year_u16 = Self::parse_u16(&s[field2_start..])?;
+                let month = Self::validate_and_convert_month(month_u8)?;
+                let year = Self::validate_and_convert_year(year_u16)?;
+                return Ok(Self::Month { year, month });
+            }
+        }
+
+        // pos is now past exactly 1 or 2 digits of the second field.
+        if pos == b.len() {
+            // No more input: the second field is the year.
+            let month_u8 = Self::parse_u8(month_str)?;
+            let year_u16 = Self::parse_u16(&s[field2_start..])?;
+            let month = Self::validate_and_convert_month(month_u8)?;
+            let year = Self::validate_and_convert_year(year_u16)?;
+            return Ok(Self::Month { year, month });
+        }
+
+        if b[pos] != b'/' {
+            return Err(err());
+        }
+
+        // Second field is a 1-2 digit day; what follows is the year.
+        let day_str = &s[field2_start..pos];
+        pos += 1; // skip '/'
+
+        // --- Year: all remaining bytes must be ASCII digits ---
+        let year_start = pos;
+        if pos >= b.len() || !b[pos].is_ascii_digit() {
+            return Err(err());
+        }
+        while pos < b.len() {
+            if !b[pos].is_ascii_digit() {
+                return Err(err());
+            }
+            pos += 1;
+        }
+
+        let month_u8 = Self::parse_u8(month_str)?;
+        let day_u8 = Self::parse_u8(day_str)?;
+        let year_u16 = Self::parse_u16(&s[year_start..])?;
         let year = Self::validate_and_convert_year(year_u16)?;
         let month = Self::validate_and_convert_month(month_u8)?;
         let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
-
         Ok(Self::Day { year, month, day })
     }
 }
@@ -608,7 +657,8 @@ mod tests {
 
     #[test]
     fn test_parse_with_whitespace() {
-        let date = parse_date(" 08 / 1991 ");
+        // Leading/trailing whitespace on the whole string is stripped.
+        let date = parse_date("  08/1991  ");
         assert_eq!(
             date,
             FuzzyDate::Month {
@@ -616,6 +666,9 @@ mod tests {
                 month: month(8),
             }
         );
+
+        // Spaces around the separator are not accepted by the strict byte parser.
+        assert!("08 / 1991".parse::<FuzzyDate>().is_err());
     }
 
     #[test]
@@ -1039,14 +1092,7 @@ mod tests {
         );
 
         // Too many slashes in month-first format
-        let result = "01/15/2000/extra".parse::<FuzzyDate>();
-        assert!(result.is_err());
-        assert!(
-            result
-                .expect_err("expected too many slash separators")
-                .to_string()
-                .contains("Too many / separators")
-        );
+        assert!("01/15/2000/extra".parse::<FuzzyDate>().is_err());
     }
 }
 
