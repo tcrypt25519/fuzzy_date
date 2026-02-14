@@ -10,7 +10,7 @@ use crate::{FuzzyDate, ParseError, RANGE_SEPARATOR, prelude::*};
 #[display(fmt = "{start}/{end}")]
 pub struct FuzzyDateRange {
     start: FuzzyDate,
-    end:   FuzzyDate,
+    end: FuzzyDate,
 }
 
 /// Error type for date range operations.
@@ -152,7 +152,9 @@ impl FromStr for FuzzyDateRange {
             1 => {
                 // SAFETY: We just verified separator_count == 1, so find() must succeed
                 let pos = trimmed.find(RANGE_SEPARATOR).ok_or_else(|| {
-                    RangeError::InvalidFormat(format!("Separator '{RANGE_SEPARATOR}' not found despite count == 1"))
+                    RangeError::InvalidFormat(format!(
+                        "Separator '{RANGE_SEPARATOR}' not found despite count == 1"
+                    ))
                 })?;
                 let start_str = trimmed[..pos].trim();
                 let end_str = trimmed[pos + 1..].trim();
@@ -161,7 +163,7 @@ impl FromStr for FuzzyDateRange {
                 let end = end_str.parse::<FuzzyDate>()?;
 
                 Self::new(start, end)
-            },
+            }
             _ => Err(RangeError::InvalidFormat(format!(
                 "Too many '{RANGE_SEPARATOR}' separators: expected 1, found {separator_count}"
             ))),
@@ -212,30 +214,30 @@ mod tests {
     #[test]
     fn test_new_range_cases() {
         struct TestCase {
-            start_year:     u16,
-            end_year:       u16,
+            start_year: u16,
+            end_year: u16,
             should_succeed: bool,
-            description:    &'static str,
+            description: &'static str,
         }
 
         let cases = [
             TestCase {
-                start_year:     1990,
-                end_year:       2000,
+                start_year: 1990,
+                end_year: 2000,
                 should_succeed: true,
-                description:    "valid range (start < end)",
+                description: "valid range (start < end)",
             },
             TestCase {
-                start_year:     2000,
-                end_year:       1990,
+                start_year: 2000,
+                end_year: 1990,
                 should_succeed: false,
-                description:    "invalid range (start > end)",
+                description: "invalid range (start > end)",
             },
             TestCase {
-                start_year:     2000,
-                end_year:       2000,
+                start_year: 2000,
+                end_year: 2000,
                 should_succeed: true,
-                description:    "equal dates (start == end)",
+                description: "equal dates (start == end)",
             },
         ];
 
@@ -256,7 +258,8 @@ mod tests {
     fn test_accessors() {
         let start = fuzzy_year(1990);
         let end = fuzzy_year(2000);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for accessor test");
+        let range =
+            FuzzyDateRange::new(start, end).expect("failed to construct range for accessor test");
 
         assert_eq!(range.start(), start);
         assert_eq!(range.end(), end);
@@ -267,7 +270,8 @@ mod tests {
     fn test_contains() {
         let start = fuzzy_year(1990);
         let end = fuzzy_year(2000);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for contains test");
+        let range =
+            FuzzyDateRange::new(start, end).expect("failed to construct range for contains test");
 
         let mid = fuzzy_year(1995);
         let before = fuzzy_year(1980);
@@ -284,8 +288,8 @@ mod tests {
     fn test_overlaps() {
         let range1_start = fuzzy_year(1990);
         let range1_end = fuzzy_year(2000);
-        let range1 =
-            FuzzyDateRange::new(range1_start, range1_end).expect("failed to construct first range for overlaps test");
+        let range1 = FuzzyDateRange::new(range1_start, range1_end)
+            .expect("failed to construct first range for overlaps test");
 
         // Overlapping range
         let range2_start = fuzzy_year(1995);
@@ -310,13 +314,13 @@ mod tests {
     fn test_is_within() {
         let outer_start = fuzzy_year(1990);
         let outer_end = fuzzy_year(2000);
-        let outer =
-            FuzzyDateRange::new(outer_start, outer_end).expect("failed to construct outer range for containment test");
+        let outer = FuzzyDateRange::new(outer_start, outer_end)
+            .expect("failed to construct outer range for containment test");
 
         let inner_start = fuzzy_year(1995);
         let inner_end = fuzzy_year(1998);
-        let inner =
-            FuzzyDateRange::new(inner_start, inner_end).expect("failed to construct inner range for containment test");
+        let inner = FuzzyDateRange::new(inner_start, inner_end)
+            .expect("failed to construct inner range for containment test");
 
         assert!(inner.is_within(&outer));
         assert!(!outer.is_within(&inner));
@@ -326,7 +330,8 @@ mod tests {
     fn test_bounds() {
         let start = fuzzy_day(1990, 6, 15);
         let end = fuzzy_day(2000, 12, 31);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for bounds test");
+        let range =
+            FuzzyDateRange::new(start, end).expect("failed to construct range for bounds test");
 
         assert_eq!(range.lower_bound(), (1990, 6, 15));
         assert_eq!(range.upper_bound_inclusive(), (2000, 12, 31));
@@ -337,14 +342,17 @@ mod tests {
     fn test_display() {
         let start = fuzzy_year(1990);
         let end = fuzzy_year(2000);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for display test");
+        let range =
+            FuzzyDateRange::new(start, end).expect("failed to construct range for display test");
 
         assert_eq!(range.to_string(), "1990/2000");
     }
 
     #[test]
     fn test_from_str_with_slash() {
-        let range = "1990/2000".parse::<FuzzyDateRange>().expect("failed to parse range with slash");
+        let range = "1990/2000"
+            .parse::<FuzzyDateRange>()
+            .expect("failed to parse range with slash");
         assert_eq!(range.start().year(), year(1990));
         assert_eq!(range.end().year(), year(2000));
     }
@@ -404,13 +412,13 @@ mod tests {
     fn test_ordering() {
         let range1_start = fuzzy_year(1990);
         let range1_end = fuzzy_year(2000);
-        let range1 =
-            FuzzyDateRange::new(range1_start, range1_end).expect("failed to construct first range for ordering test");
+        let range1 = FuzzyDateRange::new(range1_start, range1_end)
+            .expect("failed to construct first range for ordering test");
 
         let range2_start = fuzzy_year(1995);
         let range2_end = fuzzy_year(2005);
-        let range2 =
-            FuzzyDateRange::new(range2_start, range2_end).expect("failed to construct second range for ordering test");
+        let range2 = FuzzyDateRange::new(range2_start, range2_end)
+            .expect("failed to construct second range for ordering test");
 
         assert!(range1 < range2);
         assert!(range2 > range1);
@@ -435,14 +443,15 @@ mod tests {
     fn test_to_columns_and_from_columns() {
         let start = fuzzy_day(1990, 6, 15);
         let end = fuzzy_day(2000, 12, 31);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for column conversion test");
+        let range = FuzzyDateRange::new(start, end)
+            .expect("failed to construct range for column conversion test");
 
         let (sy, sm, sd, ey, em, ed) = range.to_columns();
         assert_eq!((sy, sm, sd), (1990, Some(6), Some(15)));
         assert_eq!((ey, em, ed), (2000, Some(12), Some(31)));
 
-        let restored =
-            FuzzyDateRange::from_columns(sy, sm, sd, ey, em, ed).expect("failed to restore range from columns");
+        let restored = FuzzyDateRange::from_columns(sy, sm, sd, ey, em, ed)
+            .expect("failed to restore range from columns");
         assert_eq!(range, restored);
     }
 
@@ -450,7 +459,8 @@ mod tests {
     fn test_mixed_precision_range() {
         let start = fuzzy_year(1990);
         let end = fuzzy_day(2000, 12, 31);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct mixed-precision range");
+        let range =
+            FuzzyDateRange::new(start, end).expect("failed to construct mixed-precision range");
 
         assert_eq!(range.lower_bound(), (1990, 1, 1));
         assert_eq!(range.upper_bound_inclusive(), (2000, 12, 31));
@@ -498,8 +508,8 @@ mod tests {
     fn test_display_mixed_precision() {
         let start = fuzzy_month(1991, 8);
         let end = fuzzy_year(2025);
-        let range =
-            FuzzyDateRange::new(start, end).expect("failed to construct range for mixed-precision display test");
+        let range = FuzzyDateRange::new(start, end)
+            .expect("failed to construct range for mixed-precision display test");
 
         assert_eq!(range.to_string(), "1991-08/2025");
     }
@@ -508,13 +518,15 @@ mod tests {
     fn test_serde_string_format() {
         let start = fuzzy_year(1990);
         let end = fuzzy_year(2000);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for serde string test");
+        let range = FuzzyDateRange::new(start, end)
+            .expect("failed to construct range for serde string test");
 
         let json = serde_json::to_string(&range).expect("failed to serialize range to JSON");
         // Should be a JSON string, not an object
         assert_eq!(json, r#""1990/2000""#);
 
-        let parsed: FuzzyDateRange = serde_json::from_str(&json).expect("failed to deserialize range from JSON");
+        let parsed: FuzzyDateRange =
+            serde_json::from_str(&json).expect("failed to deserialize range from JSON");
         assert_eq!(range, parsed);
     }
 
@@ -522,13 +534,15 @@ mod tests {
     fn test_serde_mixed_precision() {
         let start = fuzzy_month(1991, 8);
         let end = fuzzy_year(2025);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for serde mixed-precision test");
+        let range = FuzzyDateRange::new(start, end)
+            .expect("failed to construct range for serde mixed-precision test");
 
-        let json = serde_json::to_string(&range).expect("failed to serialize mixed-precision range");
+        let json =
+            serde_json::to_string(&range).expect("failed to serialize mixed-precision range");
         assert_eq!(json, r#""1991-08/2025""#);
 
-        let parsed: FuzzyDateRange =
-            serde_json::from_str(&json).expect("failed to deserialize mixed-precision range from JSON");
+        let parsed: FuzzyDateRange = serde_json::from_str(&json)
+            .expect("failed to deserialize mixed-precision range from JSON");
         assert_eq!(range, parsed);
     }
 
@@ -536,12 +550,14 @@ mod tests {
     fn test_serde_full_precision() {
         let start = fuzzy_day(1990, 6, 15);
         let end = fuzzy_day(2000, 12, 31);
-        let range = FuzzyDateRange::new(start, end).expect("failed to construct range for serde full-precision test");
+        let range = FuzzyDateRange::new(start, end)
+            .expect("failed to construct range for serde full-precision test");
 
         let json = serde_json::to_string(&range).expect("failed to serialize full-precision range");
         assert_eq!(json, r#""1990-06-15/2000-12-31""#);
 
-        let parsed: FuzzyDateRange = serde_json::from_str(&json).expect("failed to deserialize full-precision range");
+        let parsed: FuzzyDateRange =
+            serde_json::from_str(&json).expect("failed to deserialize full-precision range");
         assert_eq!(range, parsed);
     }
 
@@ -569,8 +585,8 @@ mod tests {
         // Year range should contain month within that year
         let range_start = fuzzy_year(1990);
         let range_end = fuzzy_year(1990);
-        let range =
-            FuzzyDateRange::new(range_start, range_end).expect("failed to construct year range for contains test");
+        let range = FuzzyDateRange::new(range_start, range_end)
+            .expect("failed to construct year range for contains test");
 
         let date = fuzzy_month(1990, 6);
         assert!(range.contains(&date), "1990/1990 should contain 1990-06");
@@ -597,7 +613,10 @@ mod tests {
             .expect("failed to construct month range for day containment test");
 
         let date = fuzzy_day(1990, 6, 15);
-        assert!(range.contains(&date), "1990-06/1990-06 should contain 1990-06-15");
+        assert!(
+            range.contains(&date),
+            "1990-06/1990-06 should contain 1990-06-15"
+        );
     }
 
     #[test]
@@ -609,7 +628,10 @@ mod tests {
             .expect("failed to construct month range for different-month containment test");
 
         let date = fuzzy_day(1990, 7, 1);
-        assert!(!range.contains(&date), "1990-06/1990-06 should not contain 1990-07-01");
+        assert!(
+            !range.contains(&date),
+            "1990-06/1990-06 should not contain 1990-07-01"
+        );
     }
 
     #[test]
@@ -617,16 +639,22 @@ mod tests {
         // Year range overlaps with month in that year
         let range1_start = fuzzy_year(1990);
         let range1_end = fuzzy_year(1990);
-        let range1 =
-            FuzzyDateRange::new(range1_start, range1_end).expect("failed to construct year range for overlaps test");
+        let range1 = FuzzyDateRange::new(range1_start, range1_end)
+            .expect("failed to construct year range for overlaps test");
 
         let range2_start = fuzzy_month(1990, 6);
         let range2_end = fuzzy_month(1990, 8);
-        let range2 =
-            FuzzyDateRange::new(range2_start, range2_end).expect("failed to construct month range for overlaps test");
+        let range2 = FuzzyDateRange::new(range2_start, range2_end)
+            .expect("failed to construct month range for overlaps test");
 
-        assert!(range1.overlaps(&range2), "1990/1990 should overlap 1990-06/1990-08");
-        assert!(range2.overlaps(&range1), "1990-06/1990-08 should overlap 1990/1990");
+        assert!(
+            range1.overlaps(&range2),
+            "1990/1990 should overlap 1990-06/1990-08"
+        );
+        assert!(
+            range2.overlaps(&range1),
+            "1990-06/1990-08 should overlap 1990/1990"
+        );
     }
 
     #[test]
@@ -642,8 +670,14 @@ mod tests {
         let range2 = FuzzyDateRange::new(range2_start, range2_end)
             .expect("failed to construct second range for partial overlap test");
 
-        assert!(range1.overlaps(&range2), "1990/1990 should overlap 1990-06/1991-02");
-        assert!(range2.overlaps(&range1), "1990-06/1991-02 should overlap 1990/1990");
+        assert!(
+            range1.overlaps(&range2),
+            "1990/1990 should overlap 1990-06/1991-02"
+        );
+        assert!(
+            range2.overlaps(&range1),
+            "1990-06/1991-02 should overlap 1990/1990"
+        );
     }
 
     #[test]
@@ -659,8 +693,14 @@ mod tests {
         let inner = FuzzyDateRange::new(inner_start, inner_end)
             .expect("failed to construct inner month range for month containment test");
 
-        assert!(inner.is_within(&outer), "1990-06/1990-08 should be within 1990/1990");
-        assert!(!outer.is_within(&inner), "1990/1990 should not be within 1990-06/1990-08");
+        assert!(
+            inner.is_within(&outer),
+            "1990-06/1990-08 should be within 1990/1990"
+        );
+        assert!(
+            !outer.is_within(&inner),
+            "1990/1990 should not be within 1990-06/1990-08"
+        );
     }
 
     #[test]
@@ -695,6 +735,9 @@ mod tests {
         let inner = FuzzyDateRange::new(inner_start, inner_end)
             .expect("failed to construct inner range for extension containment test");
 
-        assert!(!inner.is_within(&outer), "1990-07/1990-09 should not be within 1990-06/1990-08");
+        assert!(
+            !inner.is_within(&outer),
+            "1990-07/1990-09 should not be within 1990-06/1990-08"
+        );
     }
 }
