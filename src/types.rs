@@ -146,8 +146,13 @@ impl Day {
     /// Creates a new Day, validating that it's non-zero and valid for the given year and month
     ///
     /// # Errors
+    /// Returns `ParseError::InvalidMonth` if `month` is 0 or greater than 12.
     /// Returns `ParseError::InvalidDay` if the value is 0 or invalid for the given year and month.
     pub fn new(value: u8, year: u16, month: u8) -> Result<Self, ParseError> {
+        if month == 0 || month > MAX_MONTH {
+            return Err(ParseError::InvalidMonth(month));
+        }
+
         let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidDay {
             month,
             day: value,
