@@ -106,6 +106,19 @@ impl FuzzyDate {
         }
     }
 
+    /// Returns `true` if `date` falls entirely within the range of concrete days
+    /// represented by `self`.
+    ///
+    /// Uses inclusive bounds: a date is contained if its lower and upper bounds
+    /// both lie within `self`'s lower and upper bounds.
+    pub fn contains(&self, date: &Self) -> bool {
+        let container_lower = self.lower_bound();
+        let container_upper = self.upper_bound_inclusive();
+        let date_lower = date.lower_bound();
+        let date_upper = date.upper_bound_inclusive();
+        container_lower <= date_lower && date_upper <= container_upper
+    }
+
     /// Converts to database columns: (year, month, day)
     pub const fn to_columns(&self) -> (u16, Option<u8>, Option<u8>) {
         match *self {
@@ -984,3 +997,11 @@ mod tests {
         );
     }
 }
+
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeDoctests;
+
+#[cfg(doctest)]
+#[doc = include_str!("../docs/examples.md")]
+pub struct ExamplesDoctests;
