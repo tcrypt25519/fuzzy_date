@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ParseError,
     consts::{
-        CENTURY_CYCLE, DAYS_IN_MONTH, FEBRUARY, FEBRUARY_DAYS_LEAP, GREGORIAN_CYCLE, LEAP_YEAR_CYCLE, MAX_MONTH,
-        MAX_YEAR, MIN_DAY,
+        CENTURY_CYCLE, DAYS_IN_MONTH, FEBRUARY, FEBRUARY_DAYS_LEAP, GREGORIAN_CYCLE,
+        LEAP_YEAR_CYCLE, MAX_MONTH, MAX_YEAR, MIN_DAY,
     },
 };
 
@@ -148,11 +148,19 @@ impl Day {
     /// # Errors
     /// Returns `ParseError::InvalidDay` if the value is 0 or invalid for the given year and month.
     pub fn new(value: u8, year: u16, month: u8) -> Result<Self, ParseError> {
-        let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidDay { month, day: value, year })?;
+        let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidDay {
+            month,
+            day: value,
+            year,
+        })?;
 
         let max_day = days_in_month(year, month);
         if value > max_day {
-            return Err(ParseError::InvalidDay { month, day: value, year });
+            return Err(ParseError::InvalidDay {
+                month,
+                day: value,
+                year,
+            });
         }
 
         Ok(Self(non_zero))
@@ -173,15 +181,15 @@ impl TryFrom<u8> for Day {
         if value < MIN_DAY {
             return Err(ParseError::InvalidDay {
                 month: 0,
-                day:   value,
-                year:  0,
+                day: value,
+                year: 0,
             });
         }
         // Since we validated value >= MIN_DAY (which is 1), value is non-zero
         let non_zero = NonZeroU8::new(value).ok_or(ParseError::InvalidDay {
             month: 0,
-            day:   value,
-            year:  0,
+            day: value,
+            year: 0,
         })?;
         Ok(Self(non_zero))
     }
@@ -260,7 +268,9 @@ mod tests {
 
     #[test]
     fn test_year_try_from_u16() {
-        let year: Year = 2024.try_into().expect("expected Year conversion from u16 to succeed");
+        let year: Year = 2024
+            .try_into()
+            .expect("expected Year conversion from u16 to succeed");
         assert_eq!(year.get(), 2024);
 
         let result: Result<Year, _> = 0.try_into();
@@ -348,7 +358,9 @@ mod tests {
 
     #[test]
     fn test_month_try_from_u8() {
-        let month: Month = 8.try_into().expect("expected Month conversion from u8 to succeed");
+        let month: Month = 8
+            .try_into()
+            .expect("expected Month conversion from u8 to succeed");
         assert_eq!(month.get(), 8);
 
         let result: Result<Month, _> = 0.try_into();
@@ -433,8 +445,8 @@ mod tests {
             result,
             Err(ParseError::InvalidDay {
                 month: 1,
-                day:   32,
-                year:  2024,
+                day: 32,
+                year: 2024,
             })
         ));
     }
@@ -454,7 +466,9 @@ mod tests {
     #[test]
     fn test_day_try_from_u8() {
         // Valid day (context-free validation)
-        let day: Day = 15.try_into().expect("expected Day conversion from u8 to succeed");
+        let day: Day = 15
+            .try_into()
+            .expect("expected Day conversion from u8 to succeed");
         assert_eq!(day.get(), 15);
 
         // Zero is invalid
@@ -498,63 +512,63 @@ mod tests {
     #[test]
     fn test_is_leap_year_cases() {
         struct TestCase {
-            year:        u16,
-            is_leap:     bool,
+            year: u16,
+            is_leap: bool,
             description: &'static str,
         }
 
         let cases = [
             // Divisible by 4
             TestCase {
-                year:        2020,
-                is_leap:     true,
+                year: 2020,
+                is_leap: true,
                 description: "divisible by 4",
             },
             TestCase {
-                year:        2024,
-                is_leap:     true,
+                year: 2024,
+                is_leap: true,
                 description: "divisible by 4",
             },
             TestCase {
-                year:        2021,
-                is_leap:     false,
+                year: 2021,
+                is_leap: false,
                 description: "not divisible by 4",
             },
             TestCase {
-                year:        2023,
-                is_leap:     false,
+                year: 2023,
+                is_leap: false,
                 description: "not divisible by 4",
             },
             // Century years not divisible by 400
             TestCase {
-                year:        1900,
-                is_leap:     false,
+                year: 1900,
+                is_leap: false,
                 description: "century not divisible by 400",
             },
             TestCase {
-                year:        2100,
-                is_leap:     false,
+                year: 2100,
+                is_leap: false,
                 description: "century not divisible by 400",
             },
             TestCase {
-                year:        2200,
-                is_leap:     false,
+                year: 2200,
+                is_leap: false,
                 description: "century not divisible by 400",
             },
             TestCase {
-                year:        2300,
-                is_leap:     false,
+                year: 2300,
+                is_leap: false,
                 description: "century not divisible by 400",
             },
             // Divisible by 400
             TestCase {
-                year:        2000,
-                is_leap:     true,
+                year: 2000,
+                is_leap: true,
                 description: "divisible by 400",
             },
             TestCase {
-                year:        2400,
-                is_leap:     true,
+                year: 2400,
+                is_leap: true,
                 description: "divisible by 400",
             },
         ];
@@ -566,7 +580,11 @@ mod tests {
                 "Year {} ({}): expected {}",
                 case.year,
                 case.description,
-                if case.is_leap { "leap year" } else { "not leap year" }
+                if case.is_leap {
+                    "leap year"
+                } else {
+                    "not leap year"
+                }
             );
         }
     }
@@ -574,14 +592,22 @@ mod tests {
     #[test]
     fn test_days_in_month_31_day_months() {
         for month in [1, 3, 5, 7, 8, 10, 12] {
-            assert_eq!(days_in_month(2024, month), 31, "Month {month} should have 31 days");
+            assert_eq!(
+                days_in_month(2024, month),
+                31,
+                "Month {month} should have 31 days"
+            );
         }
     }
 
     #[test]
     fn test_days_in_month_30_day_months() {
         for month in [4, 6, 9, 11] {
-            assert_eq!(days_in_month(2024, month), 30, "Month {month} should have 30 days");
+            assert_eq!(
+                days_in_month(2024, month),
+                30,
+                "Month {month} should have 30 days"
+            );
         }
     }
 
@@ -589,7 +615,11 @@ mod tests {
     fn test_days_in_month_february_non_leap() {
         assert_eq!(days_in_month(2023, 2), 28);
         assert_eq!(days_in_month(2021, 2), 28);
-        assert_eq!(days_in_month(1900, 2), 28, "Century year not divisible by 400");
+        assert_eq!(
+            days_in_month(1900, 2),
+            28,
+            "Century year not divisible by 400"
+        );
     }
 
     #[test]
