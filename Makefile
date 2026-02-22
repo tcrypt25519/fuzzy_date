@@ -35,6 +35,10 @@ clippy: ## Run clippy
 doc: ## Build documentation
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 
+.PHONY: coverage
+coverage: ## Generate HTML coverage report with cargo-llvm-cov (install: cargo install cargo-llvm-cov)
+	cargo llvm-cov --all-features --open
+
 .PHONY: ci
 ci: fmt-check clippy test-cargo doc ## Run all CI checks
 
