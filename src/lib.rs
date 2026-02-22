@@ -258,85 +258,85 @@ impl FuzzyDate {
         types::Day::new(day, year, month)
     }
 
-    /// Parse an ISO-format date (YYYY-MM or YYYY-MM-DD) without heap allocation.
+    /// Dispatch to the right fixed-position ISO parser based on string length.
     ///
-    /// Uses a strict byte-by-byte walk: the year field consumes all leading ASCII
-    /// digits; the month and day fields are each at most 2 ASCII digits, delimited
-    /// by `-`.  Any unexpected byte or trailing content is an immediate error.
+    /// Only lengths 7 (`YYYY-MM`) and 10 (`YYYY-MM-DD`) are valid; everything
+    /// else is an error with a specific message when excess `-` separators are
+    /// detected.
     fn parse_iso_date(s: &str) -> Result<Self, ParseError> {
+        match s.len() {
+            7 => Self::parse_iso_7(s),
+            10 => Self::parse_iso_10(s),
+            _ => {
+                let sep_count = s.bytes().filter(|&b| b == b'-').count();
+                if sep_count > 2 {
+                    Err(ParseError::InvalidFormat(format!(
+                        "Too many {DATE_SEPARATOR} separators: expected 1-2, found {sep_count}"
+                    )))
+                } else {
+                    Err(ParseError::InvalidFormat(s.to_string()))
+                }
+            }
+        }
+    }
+
+    /// Parse `YYYY-MM` (exactly 7 bytes) using fixed-position structural checks.
+    ///
+    /// Digits must appear at positions 0–3 and 5–6; the only other character
+    /// must be a `-` at position 4.  No heap allocation on success.
+    fn parse_iso_7(s: &str) -> Result<Self, ParseError> {
         let b = s.as_bytes();
-        let err = || ParseError::InvalidFormat(s.to_string());
-        let mut pos = 0;
-
-        // --- Year: all leading ASCII digits up to the first '-' ---
-        if pos >= b.len() || !b[pos].is_ascii_digit() {
-            return Err(err());
+        if b.len() != 7 {
+            return Err(ParseError::InvalidFormat(s.to_string()));
         }
-        while pos < b.len() && b[pos].is_ascii_digit() {
-            pos += 1;
-        }
-        let year_str = &s[..pos];
-
-        // Must be followed by '-'
-        if pos >= b.len() || b[pos] != b'-' {
-            return Err(err());
-        }
-        pos += 1; // skip '-'
-
-        // --- Month: 1-2 ASCII digits ---
-        if pos >= b.len() || !b[pos].is_ascii_digit() {
-            return Err(err());
-        }
-        let month_start = pos;
-        pos += 1;
-        if pos < b.len() && b[pos].is_ascii_digit() {
-            pos += 1;
-        }
-        let month_str = &s[month_start..pos];
-
-        // End of string: YYYY-MM
-        if pos == b.len() {
-            let year_u16 = Self::parse_u16(year_str)?;
-            let month_u8 = Self::parse_u8(month_str)?;
+        if b[0].is_ascii_digit()
+            && b[1].is_ascii_digit()
+            && b[2].is_ascii_digit()
+            && b[3].is_ascii_digit()
+            && b[4] == b'-'
+            && b[5].is_ascii_digit()
+            && b[6].is_ascii_digit()
+        {
+            let year_u16 = Self::parse_u16(&s[0..4])?;
+            let month_u8 = Self::parse_u8(&s[5..7])?;
             let year = Self::validate_and_convert_year(year_u16)?;
             let month = Self::validate_and_convert_month(month_u8)?;
-            return Ok(Self::Month { year, month });
+            Ok(Self::Month { year, month })
+        } else {
+            Err(ParseError::InvalidFormat(s.to_string()))
         }
+    }
 
-        // Must be followed by '-'
-        if b[pos] != b'-' {
-            return Err(err());
+    /// Parse `YYYY-MM-DD` (exactly 10 bytes) using fixed-position structural checks.
+    ///
+    /// Digits must appear at positions 0–3, 5–6, and 8–9; `-` separators must
+    /// appear at positions 4 and 7.  No heap allocation on success.
+    fn parse_iso_10(s: &str) -> Result<Self, ParseError> {
+        let b = s.as_bytes();
+        if b.len() != 10 {
+            return Err(ParseError::InvalidFormat(s.to_string()));
         }
-        pos += 1; // skip '-'
-
-        // --- Day: 1-2 ASCII digits ---
-        if pos >= b.len() || !b[pos].is_ascii_digit() {
-            return Err(err());
+        if b[0].is_ascii_digit()
+            && b[1].is_ascii_digit()
+            && b[2].is_ascii_digit()
+            && b[3].is_ascii_digit()
+            && b[4] == b'-'
+            && b[5].is_ascii_digit()
+            && b[6].is_ascii_digit()
+            && b[7] == b'-'
+            && b[8].is_ascii_digit()
+            && b[9].is_ascii_digit()
+        {
+            let year_u16 = Self::parse_u16(&s[0..4])?;
+            let month_u8 = Self::parse_u8(&s[5..7])?;
+            let day_u8 = Self::parse_u8(&s[8..10])?;
+            let year = Self::validate_and_convert_year(year_u16)?;
+            let month = Self::validate_and_convert_month(month_u8)?;
+            let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
+            Ok(Self::Day { year, month, day })
+        } else {
+            Err(ParseError::InvalidFormat(s.to_string()))
         }
-        let day_start = pos;
-        pos += 1;
-        if pos < b.len() && b[pos].is_ascii_digit() {
-            pos += 1;
-        }
-        let day_str = &s[day_start..pos];
-
-        // Must be end of string; a trailing '-' means too many separators
-        if pos < b.len() {
-            if b[pos] == b'-' {
-                return Err(ParseError::InvalidFormat(format!(
-                    "Too many {DATE_SEPARATOR} separators: expected 1-2, found 3+"
-                )));
-            }
-            return Err(err());
-        }
-
-        let year_u16 = Self::parse_u16(year_str)?;
-        let month_u8 = Self::parse_u8(month_str)?;
-        let day_u8 = Self::parse_u8(day_str)?;
-        let year = Self::validate_and_convert_year(year_u16)?;
-        let month = Self::validate_and_convert_month(month_u8)?;
-        let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
-        Ok(Self::Day { year, month, day })
     }
 
     fn parse_year_only(s: &str) -> Result<Self, ParseError> {
