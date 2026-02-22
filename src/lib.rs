@@ -315,6 +315,19 @@ impl FuzzyDate {
     /// Uses a strict byte-by-byte walk: month and day fields are at most 2 ASCII
     /// digits; any other byte in those positions is an immediate error.  The year
     /// field consumes all remaining bytes, which must all be ASCII digits.
+    ///
+    /// # Why byte-by-byte instead of split('/')?
+    ///
+    /// The two slash formats are structurally ambiguous at the second field: `MM/DD/YYYY`
+    /// has a 1-2 digit day followed by another `/`, while `MM/YYYY` has the year there
+    /// with no second `/`.  A simple `split('/')` gives 2 or 3 parts, but that forces
+    /// a heap allocation and still requires per-field length checks.
+    ///
+    /// The byte walker resolves the ambiguity without allocating by peeking ahead:
+    /// - If the second numeric run has 3+ digits, it must be the year → `MM/YYYY`.
+    /// - If after 1-2 digits the next byte is `/`, the run is a day → `MM/DD/YYYY`.
+    /// - If the input ends after 1-2 digits, the run is also the year → `MM/YYYY`.
+    /// Any other byte is an immediate error, keeping the state machine exhaustive.
     fn parse_slash_date(s: &str) -> Result<Self, ParseError> {
         let b = s.as_bytes();
         let err = || ParseError::InvalidFormat(s.to_string());
