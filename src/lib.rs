@@ -218,18 +218,8 @@ impl FromStr for FuzzyDate {
         }
 
         if has_hyphen {
-            // ISO format: YYYY or YYYY-MM or YYYY-MM-DD
-            let parts: Vec<&str> = trimmed.split(DATE_SEPARATOR).map(str::trim).collect();
-            match parts.len() {
-                1 => Self::parse_year_only(parts[0]),
-                2 => Self::parse_iso_month_year(&parts),
-                3 => Self::parse_iso_full_date(&parts),
-                _ => Err(ParseError::InvalidFormat(format!(
-                    "Too many {} separators: expected 0-2, found {}",
-                    DATE_SEPARATOR,
-                    parts.len() - 1
-                ))),
-            }
+            // ISO format: YYYY-MM or YYYY-MM-DD (bare YYYY is handled by the else branch)
+            Self::parse_iso_date(trimmed)
         } else if has_slash {
             // Month-first format: MM/YYYY or MM/DD/YYYY
             Self::parse_slash_date(trimmed)
@@ -268,36 +258,85 @@ impl FuzzyDate {
         types::Day::new(day, year, month)
     }
 
-    fn parse_iso_month_year(parts: &[&str]) -> Result<Self, ParseError> {
-        if parts.len() != 2 {
-            return Err(ParseError::InvalidFormat(parts.join("-")));
+    /// Dispatch to the right fixed-position ISO parser based on string length.
+    ///
+    /// Only lengths 7 (`YYYY-MM`) and 10 (`YYYY-MM-DD`) are valid; everything
+    /// else is an error with a specific message when excess `-` separators are
+    /// detected.
+    fn parse_iso_date(s: &str) -> Result<Self, ParseError> {
+        match s.len() {
+            7 => Self::parse_iso_7(s),
+            10 => Self::parse_iso_10(s),
+            _ => {
+                let sep_count = s.bytes().filter(|&b| b == b'-').count();
+                if sep_count > 2 {
+                    Err(ParseError::InvalidFormat(format!(
+                        "Too many {DATE_SEPARATOR} separators: expected 1-2, found {sep_count}"
+                    )))
+                } else {
+                    Err(ParseError::InvalidFormat(s.to_string()))
+                }
+            }
         }
-        // Parse components - InvalidFormat if not numeric
-        let year_u16 = Self::parse_u16(parts[0])?;
-        let month_u8 = Self::parse_u8(parts[1])?;
-
-        // Validate and convert to NonZero types
-        let year = Self::validate_and_convert_year(year_u16)?;
-        let month = Self::validate_and_convert_month(month_u8)?;
-
-        Ok(Self::Month { year, month })
     }
 
-    fn parse_iso_full_date(parts: &[&str]) -> Result<Self, ParseError> {
-        if parts.len() != 3 {
-            return Err(ParseError::InvalidFormat(parts.join("-")));
+    /// Parse `YYYY-MM` (exactly 7 bytes) using fixed-position structural checks.
+    ///
+    /// Digits must appear at positions 0–3 and 5–6; the only other character
+    /// must be a `-` at position 4.  No heap allocation on success.
+    fn parse_iso_7(s: &str) -> Result<Self, ParseError> {
+        let b = s.as_bytes();
+        if b.len() != 7 {
+            return Err(ParseError::InvalidFormat(s.to_string()));
         }
-        // Parse components - InvalidFormat if not numeric
-        let year_u16 = Self::parse_u16(parts[0])?;
-        let month_u8 = Self::parse_u8(parts[1])?;
-        let day_u8 = Self::parse_u8(parts[2])?;
+        if b[0].is_ascii_digit()
+            && b[1].is_ascii_digit()
+            && b[2].is_ascii_digit()
+            && b[3].is_ascii_digit()
+            && b[4] == b'-'
+            && b[5].is_ascii_digit()
+            && b[6].is_ascii_digit()
+        {
+            let year_u16 = Self::parse_u16(&s[0..4])?;
+            let month_u8 = Self::parse_u8(&s[5..7])?;
+            let year = Self::validate_and_convert_year(year_u16)?;
+            let month = Self::validate_and_convert_month(month_u8)?;
+            Ok(Self::Month { year, month })
+        } else {
+            Err(ParseError::InvalidFormat(s.to_string()))
+        }
+    }
 
-        // Validate and convert to NonZero types
-        let year = Self::validate_and_convert_year(year_u16)?;
-        let month = Self::validate_and_convert_month(month_u8)?;
-        let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
-
-        Ok(Self::Day { year, month, day })
+    /// Parse `YYYY-MM-DD` (exactly 10 bytes) using fixed-position structural checks.
+    ///
+    /// Digits must appear at positions 0–3, 5–6, and 8–9; `-` separators must
+    /// appear at positions 4 and 7.  No heap allocation on success.
+    fn parse_iso_10(s: &str) -> Result<Self, ParseError> {
+        let b = s.as_bytes();
+        if b.len() != 10 {
+            return Err(ParseError::InvalidFormat(s.to_string()));
+        }
+        if b[0].is_ascii_digit()
+            && b[1].is_ascii_digit()
+            && b[2].is_ascii_digit()
+            && b[3].is_ascii_digit()
+            && b[4] == b'-'
+            && b[5].is_ascii_digit()
+            && b[6].is_ascii_digit()
+            && b[7] == b'-'
+            && b[8].is_ascii_digit()
+            && b[9].is_ascii_digit()
+        {
+            let year_u16 = Self::parse_u16(&s[0..4])?;
+            let month_u8 = Self::parse_u8(&s[5..7])?;
+            let day_u8 = Self::parse_u8(&s[8..10])?;
+            let year = Self::validate_and_convert_year(year_u16)?;
+            let month = Self::validate_and_convert_month(month_u8)?;
+            let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
+            Ok(Self::Day { year, month, day })
+        } else {
+            Err(ParseError::InvalidFormat(s.to_string()))
+        }
     }
 
     fn parse_year_only(s: &str) -> Result<Self, ParseError> {
