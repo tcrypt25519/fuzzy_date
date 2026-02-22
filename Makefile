@@ -36,7 +36,7 @@ doc: ## Build documentation
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 
 .PHONY: ci
-ci: fmt-check clippy test-cargo ## Run all CI checks
+ci: fmt-check clippy test-cargo doc ## Run all CI checks
 
 .PHONY: clippy-fix
 clippy-fix: ## Run clippy with automatic fixes
