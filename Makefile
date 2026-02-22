@@ -15,9 +15,12 @@ doctest: ## Run doc tests
 .PHONY: test-all
 test-all: test doctest ## Run all tests including doctests
 
-.PHONY: check
-check: ## Run Cargo check
+.PHONY: cargo-check
+cargo-check: ## Run cargo check (type-check without linking)
 	cargo check --all-targets --all-features
+
+.PHONY: check
+check: fmt-check clippy test-all doc ## Run fmt-check, clippy, all tests, and docs in one command
 
 .PHONY: fmt
 fmt: ## Format code
