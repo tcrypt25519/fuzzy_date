@@ -77,5 +77,15 @@ storage, `to_columns()` / `from_columns()` map to three nullable columns
 
 Ranges parse as `{start}/{end}` — e.g. `2020-03/2026-02-13`.
 
+## Rejected formats
+
+| Format           | Example          | Reason                                          |
+|------------------|------------------|-------------------------------------------------|
+| `MM-DD-YYYY`     | `02-13-2026`     | Hyphens require year-first; ambiguous with ISO  |
+| `DD/MM/YYYY`     | `13/02/2026`     | Day-first slash not supported                   |
+| `YYYYMMDD`       | `20260213`       | No separator; parsed as bare year or error      |
+| Mixed delimiters | `2026-02/13`     | Any mix of `-` and `/` is rejected immediately  |
+| With time        | `2026-02-13T10:00` | Time components are not accepted              |
+
 For fuller examples including ranges, database integration, construction, and
 error handling, see [docs/examples.md](docs/examples.md).
