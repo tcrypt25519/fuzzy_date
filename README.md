@@ -89,3 +89,16 @@ Ranges parse as `{start}/{end}` — e.g. `2020-03/2026-02-13`.
 
 For fuller examples including ranges, database integration, construction, and
 error handling, see [docs/examples.md](docs/examples.md).
+
+## Security and Validation
+
+Parsing is pure computation — no `unsafe` code, no I/O, no external calls.
+
+Every component is validated before a `FuzzyDate` is constructed:
+
+- Year must be 1–9999.
+- Month must be 1–12.
+- Day must be valid for the given month and year (leap years handled correctly).
+
+A `FuzzyDate` value is always well-formed; the type system makes invalid dates
+unrepresentable through the public API.
