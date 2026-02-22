@@ -34,3 +34,19 @@ helpers for lower/upper bounds.
 
 All errors are diagnostic — each carries enough context to identify the offending
 value. Parsing is pure computation: no I/O, no allocation beyond the error message.
+
+## Module Architecture
+
+The crate is organized into four private modules with a single public re-export layer:
+
+| Module    | Role                                                                              |
+|-----------|-----------------------------------------------------------------------------------|
+| `lib`     | Public API: `FuzzyDate`, `ParseError`, `FromStr`, `Ord`, serde impls             |
+| `types`   | Validated newtypes: `Year`, `Month`, `Day` (backed by `NonZeroU16`/`NonZeroU8`)  |
+| `consts`  | Named constants: month lengths, `MAX_YEAR`, `DAYS_IN_MONTH`, separator chars     |
+| `range`   | `FuzzyDateRange` and `RangeError`                                                 |
+| `prelude` | Internal re-exports shared across modules                                         |
+
+Dependency direction is strictly one-way: `lib` and `range` import from `types` and
+`consts`; no leaf module imports from `lib` or `range`. This keeps compilation
+incremental and prevents circular dependencies.
