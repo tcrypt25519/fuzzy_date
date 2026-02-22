@@ -15,9 +15,12 @@ doctest: ## Run doc tests
 .PHONY: test-all
 test-all: test doctest ## Run all tests including doctests
 
-.PHONY: check
-check: ## Run Cargo check
+.PHONY: cargo-check
+cargo-check: ## Run cargo check (type-check without linking)
 	cargo check --all-targets --all-features
+
+.PHONY: check
+check: fmt-check clippy test-all doc ## Run fmt-check, clippy, all tests, and docs in one command
 
 .PHONY: fmt
 fmt: ## Format code
@@ -35,8 +38,12 @@ clippy: ## Run clippy
 doc: ## Build documentation
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 
+.PHONY: coverage
+coverage: ## Generate HTML coverage report with cargo-llvm-cov (install: cargo install cargo-llvm-cov)
+	cargo llvm-cov --all-features --open
+
 .PHONY: ci
-ci: fmt-check clippy test-cargo ## Run all CI checks
+ci: fmt-check clippy test-cargo doc ## Run all CI checks
 
 .PHONY: clippy-fix
 clippy-fix: ## Run clippy with automatic fixes
