@@ -2,6 +2,14 @@
 
 A Rust crate for dates with varying precision: year-only, year+month, or full date.
 
+## Quick Start
+
+1. Add the dependency: `fuzzy_date = "0.1"` in `[dependencies]`.
+2. Parse a string: `"2026-02".parse::<FuzzyDate>()?`
+3. Query bounds: `.lower_bound()` and `.upper_bound_inclusive()` return `(year, month, day)` tuples.
+4. Check containment: `month.contains(&day_date)`.
+5. Serde: values serialize/deserialize as ISO strings automatically.
+
 ## Background
 
 Real-world date data often isn't complete. Vendors, forms, and manual records
