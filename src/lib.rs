@@ -327,6 +327,7 @@ impl FuzzyDate {
     /// - If the second numeric run has 3+ digits, it must be the year → `MM/YYYY`.
     /// - If after 1-2 digits the next byte is `/`, the run is a day → `MM/DD/YYYY`.
     /// - If the input ends after 1-2 digits, the run is also the year → `MM/YYYY`.
+    ///
     /// Any other byte is an immediate error, keeping the state machine exhaustive.
     fn parse_slash_date(s: &str) -> Result<Self, ParseError> {
         let b = s.as_bytes();
