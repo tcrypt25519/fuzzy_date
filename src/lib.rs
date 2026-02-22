@@ -218,18 +218,8 @@ impl FromStr for FuzzyDate {
         }
 
         if has_hyphen {
-            // ISO format: YYYY or YYYY-MM or YYYY-MM-DD
-            let parts: Vec<&str> = trimmed.split(DATE_SEPARATOR).map(str::trim).collect();
-            match parts.len() {
-                1 => Self::parse_year_only(parts[0]),
-                2 => Self::parse_iso_month_year(&parts),
-                3 => Self::parse_iso_full_date(&parts),
-                _ => Err(ParseError::InvalidFormat(format!(
-                    "Too many {} separators: expected 0-2, found {}",
-                    DATE_SEPARATOR,
-                    parts.len() - 1
-                ))),
-            }
+            // ISO format: YYYY-MM or YYYY-MM-DD (bare YYYY is handled by the else branch)
+            Self::parse_iso_date(trimmed)
         } else if has_slash {
             // Month-first format: MM/YYYY or MM/DD/YYYY
             Self::parse_slash_date(trimmed)
@@ -268,35 +258,84 @@ impl FuzzyDate {
         types::Day::new(day, year, month)
     }
 
-    fn parse_iso_month_year(parts: &[&str]) -> Result<Self, ParseError> {
-        if parts.len() != 2 {
-            return Err(ParseError::InvalidFormat(parts.join("-")));
+    /// Parse an ISO-format date (YYYY-MM or YYYY-MM-DD) without heap allocation.
+    ///
+    /// Uses a strict byte-by-byte walk: the year field consumes all leading ASCII
+    /// digits; the month and day fields are each at most 2 ASCII digits, delimited
+    /// by `-`.  Any unexpected byte or trailing content is an immediate error.
+    fn parse_iso_date(s: &str) -> Result<Self, ParseError> {
+        let b = s.as_bytes();
+        let err = || ParseError::InvalidFormat(s.to_string());
+        let mut pos = 0;
+
+        // --- Year: all leading ASCII digits up to the first '-' ---
+        if pos >= b.len() || !b[pos].is_ascii_digit() {
+            return Err(err());
         }
-        // Parse components - InvalidFormat if not numeric
-        let year_u16 = Self::parse_u16(parts[0])?;
-        let month_u8 = Self::parse_u8(parts[1])?;
-
-        // Validate and convert to NonZero types
-        let year = Self::validate_and_convert_year(year_u16)?;
-        let month = Self::validate_and_convert_month(month_u8)?;
-
-        Ok(Self::Month { year, month })
-    }
-
-    fn parse_iso_full_date(parts: &[&str]) -> Result<Self, ParseError> {
-        if parts.len() != 3 {
-            return Err(ParseError::InvalidFormat(parts.join("-")));
+        while pos < b.len() && b[pos].is_ascii_digit() {
+            pos += 1;
         }
-        // Parse components - InvalidFormat if not numeric
-        let year_u16 = Self::parse_u16(parts[0])?;
-        let month_u8 = Self::parse_u8(parts[1])?;
-        let day_u8 = Self::parse_u8(parts[2])?;
+        let year_str = &s[..pos];
 
-        // Validate and convert to NonZero types
+        // Must be followed by '-'
+        if pos >= b.len() || b[pos] != b'-' {
+            return Err(err());
+        }
+        pos += 1; // skip '-'
+
+        // --- Month: 1-2 ASCII digits ---
+        if pos >= b.len() || !b[pos].is_ascii_digit() {
+            return Err(err());
+        }
+        let month_start = pos;
+        pos += 1;
+        if pos < b.len() && b[pos].is_ascii_digit() {
+            pos += 1;
+        }
+        let month_str = &s[month_start..pos];
+
+        // End of string: YYYY-MM
+        if pos == b.len() {
+            let year_u16 = Self::parse_u16(year_str)?;
+            let month_u8 = Self::parse_u8(month_str)?;
+            let year = Self::validate_and_convert_year(year_u16)?;
+            let month = Self::validate_and_convert_month(month_u8)?;
+            return Ok(Self::Month { year, month });
+        }
+
+        // Must be followed by '-'
+        if b[pos] != b'-' {
+            return Err(err());
+        }
+        pos += 1; // skip '-'
+
+        // --- Day: 1-2 ASCII digits ---
+        if pos >= b.len() || !b[pos].is_ascii_digit() {
+            return Err(err());
+        }
+        let day_start = pos;
+        pos += 1;
+        if pos < b.len() && b[pos].is_ascii_digit() {
+            pos += 1;
+        }
+        let day_str = &s[day_start..pos];
+
+        // Must be end of string; a trailing '-' means too many separators
+        if pos < b.len() {
+            if b[pos] == b'-' {
+                return Err(ParseError::InvalidFormat(format!(
+                    "Too many {DATE_SEPARATOR} separators: expected 1-2, found 3+"
+                )));
+            }
+            return Err(err());
+        }
+
+        let year_u16 = Self::parse_u16(year_str)?;
+        let month_u8 = Self::parse_u8(month_str)?;
+        let day_u8 = Self::parse_u8(day_str)?;
         let year = Self::validate_and_convert_year(year_u16)?;
         let month = Self::validate_and_convert_month(month_u8)?;
         let day = Self::validate_and_convert_day(year_u16, month_u8, day_u8)?;
-
         Ok(Self::Day { year, month, day })
     }
 
